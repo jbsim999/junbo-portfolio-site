@@ -1,0 +1,111 @@
+/* The document site's quiet white/navy/blue shell, around the pixel exhibits. */
+:root { color-scheme: light; --text:#151d30; --muted:#647084; --surface:#fff; }
+body.entry-page,body.game-page {
+  --ink:#fff; --panel:#fff; --line:#dfe4ed; --gold:#245bdb; --mint:#245bdb;
+  background:#fff; color:var(--text); font-family:'Noto Sans KR',sans-serif;
+}
+body.game-page[data-era=school] { background:#f5faf7; --ambient-wash:#56c88419; }
+body.game-page[data-era=university] { background:#f5f8fd; --ambient-wash:#559be01c; }
+body.game-page[data-era=military] { background:#fff8f3; --ambient-wash:#ef965e26; }
+body.game-page[data-era=lab] { background:#f4faf9; --ambient-wash:#79d8cb19; }
+body.game-page[data-era=office] { background:#f5f7fc; --ambient-wash:#6174bc20; }
+body.game-page[data-era=gallery] { background:#fff; --ambient-wash:transparent; }
+.game-page::after { mix-blend-mode:multiply; }
+.shell-header { min-height:90px; padding-top:18px; padding-bottom:18px; border-color:var(--line); }
+.shell-footer { border-color:var(--line); }
+.quiet-link { border-color:#c5cfde; }
+.overline,.entry-intro .overline { color:#245bdb; }
+.entry-intro h1 { color:#151d30; }
+.mode-card,.read-card { background:#fff; border:1px solid #dfe4ed; border-radius:8px; box-shadow:none; color:#151d30; }
+.mode-card:hover { color:#151d30; border-color:#245bdb; box-shadow:0 10px 30px #151d300b; transform:translateY(-2px); }
+.mode-top,.mode-tag,.read-card .mode-top,.read-card .mode-tag { color:#647084; }
+.mode-copy { border-color:#dfe4ed; }
+.mode-copy p,.read-card .mode-copy p { color:#647084; }
+.mode-action,.read-card .mode-action { background:#245bdb; color:white; border-radius:5px; box-shadow:none; }
+.reading-preview { background:#f7f9fc; border-color:#dfe4ed; box-shadow:none; border-radius:5px; }
+.reading-preview p span,.reading-preview strong { color:#151d30; }
+.preview-tags span { border-color:#dfe4ed; color:#647084; }
+.preview-rule { background:#dfe4ed; }
+.preview-caption { color:#151d30; background:#fffffff5; border:1px solid #dfe4ed; border-radius:4px; }
+.room-tabs { border-color:var(--line); }
+.room-tabs button[aria-pressed=true] { font-weight:700; }
+.room-tabs a { color:var(--muted); }
+.viewport { border:1px solid #cad4df; border-radius:8px; box-shadow:none; background:#e7edf3; }
+.exhibition-guide { border:1px solid var(--line); border-radius:8px; background:#fff; }
+.interaction-strip { border-color:var(--line); }
+.location-copy>span:last-child,.guide-note { color:var(--muted); }
+.action-button { background:#245bdb; color:#fff; }
+.action-button kbd { border-color:#ffffff80; }
+.action-button:disabled { color:#647084; background:#f1f5fc; }
+.timeline-nav button { color:#647084; border-left-color:#dfe4ed; }
+.timeline-nav button span { color:#647084; }
+.timeline-nav button:hover { background:#f7f9fc; }
+.timeline-nav button[aria-current=true] { background:#edf3ff; color:#245bdb; border-left-color:#245bdb; }
+.gallery-map-grid button { background:#f7f9fc; border-color:#dfe4ed; }
+.gallery-map-grid button span { color:#647084; }
+.gallery-map-grid button[aria-current=true] { background:#edf3ff; color:#245bdb; border-color:#245bdb; }
+.control-bar p { color:#647084; }
+.direction-pad button { background:#fff; color:#151d30; border:1px solid #cbd5e3; box-shadow:none; border-radius:5px; }
+.direction-pad button:hover,.direction-pad button:active { background:#edf3ff; border-color:#245bdb; }
+.direction-pad button:active { transform:none; }
+kbd { border-color:#b4c0d0; border-radius:3px; }
+.scene-corner { color:#506178; }
+.scene-corner span { color:#506178; border-color:#d1dbe5; background:#fffffff0; }
+.exhibit-info { background:#fffffff5; border:1px solid #d1dbe5; border-radius:6px; box-shadow:none; }
+.exhibit:not(.current) .exhibit-info { opacity:.85; }
+.exhibit.current .exhibit-info { border-color:#245bdb; box-shadow:none; }
+.exhibit-info h2 { color:#151d30; }
+.exhibit-info p { color:#526178; }
+.exhibit-info .overline { color:#647084; }
+.exhibit-info button { color:#245bdb; background:#edf3ff; border-color:#c4d3ed; }
+.exhibit-info button:hover { background:#e0eafd; }
+.npc-display,.npc-display .pixel-sprite { width:104px; height:104px; }
+.npc-display { top:188px; }
+.actor-name { background:#fff; color:#34435b; border:1px solid #ccd6e3; }
+.visitor .actor-name { top:84px; bottom:auto; }
+.game-page .registered-visitor,.entry-page .registered-visitor { position:relative; background:none; }
+.entry-page .preview-visitor.registered-visitor { position:absolute; }
+.visitor-frame { display:block; position:absolute; background-image:url('assets/visitor-consistency-v8.webp'); background-repeat:no-repeat; image-rendering:pixelated; }
+.art-status { background:#f1f5fc; border-color:#cbd7e9; }
+dialog { background:#fff; color:#151d30; border-color:#dfe4ed; border-radius:8px; }
+.dialog-top { background:#fff; }
+dialog h3,.dialog-top .overline,.detail-decisions dt { color:#245bdb; }
+.detail-result { background:#edf3ff; color:#245bdb; }
+
+/* Open-front rooms extend to one level threshold. Junbo stands on their own
+   floor; there is no separate display apron. One world origin owns all paving. */
+.journey-path,.journey-divider { display:none; pointer-events:none; position:absolute; left:0; right:0; }
+[data-scene=journey] .scene-bay { height:340px; }
+[data-scene=journey] .scene-backdrop { background:#b1a69b; }
+[data-scene=journey] .journey-path {
+  display:block; top:340px; bottom:0;
+}
+[data-scene=journey] .journey-divider { display:block; top:336px; height:4px; background:#a7998a; border-top:1px solid #d4c9bb; border-bottom:1px solid #70675c; }
+.journey-path,.preview-path { overflow:hidden; background:#aa9482; }
+.paving-tile { position:absolute; top:0; bottom:0; display:block; background-image:url('assets/brick-walkway-v10.webp'); background-size:var(--paving-texture-width) var(--paving-texture-height); background-position:var(--paving-offset) 0; background-repeat:repeat-y; image-rendering:pixelated; }
+.game-page[data-scene=gallery] .journey-path { display:block; top:0; bottom:0; }
+.game-page[data-scene=gallery] .scene-backdrop { background:#aa9482; }
+.studio-preview { border-top:1px solid #dfe4ed; border-bottom:1px solid #dfe4ed; }
+.entry-page .studio-preview { background-image:url('assets/entry-office.webp'); background-size:100% 100%; }
+.entry-page .preview-npc.junbo-identity { background-image:url('assets/entry-junbo.webp'); background-size:100% 100%; }
+.entry-page .preview-visitor .visitor-frame { background-image:url('assets/entry-visitor.webp'); background-size:100% 100%!important; background-position:0 0!important; }
+.preview-path,.preview-divider { position:absolute; left:0; right:0; pointer-events:none; }
+.preview-path { top:66%; bottom:0; }
+.preview-divider { top:calc(66% - 2px); height:2px; background:#a7998a; border-bottom:1px solid #70675c; }
+.preview-npc { top:calc(66% - 96px); }
+.preview-visitor { bottom:9px; }
+@media(max-width:600px) {
+  .entry-page .reading-preview { height:auto; min-height:220px; }
+  [data-scene=journey] .exhibit-info { padding:10px 18px; }
+  [data-scene=journey] .exhibit-info .overline { margin-bottom:4px; }
+  [data-scene=journey] .exhibit-info h2 { font-size:1.25rem; margin-bottom:4px; }
+  [data-scene=journey] .exhibit-info p { margin-bottom:6px; }
+  [data-scene=journey] .exhibit-info button { min-height:36px; }
+}
+@media(max-width:800px) {
+  .timeline-nav button { border:1px solid #dfe4ed; }
+  .timeline-nav button[aria-current=true] { border-color:#245bdb; }
+}
+@media(max-width:650px) {
+  .shell-header { min-height:78px; padding:20px 22px; }
+}

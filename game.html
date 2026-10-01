@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>심준보의 전시관 | 체험형 포트폴리오</title>
+<meta name="description" content="캐릭터로 이동하며 심준보의 이력과 프로젝트를 살펴보는 픽셀 전시관.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23151d30'/%3E%3Ctext x='5' y='23' font-size='20' fill='%2386adff' font-family='sans-serif' font-weight='700'%3EJ.%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="explorer.css">
+<link rel="stylesheet" href="batch.css">
+<link rel="stylesheet" href="brand.css">
+<link rel="stylesheet" href="exhibition-theme.css">
+<script src="content.js" defer></script><script src="projects.js" defer></script><script src="batch-view.js" defer></script><script src="visitor-sprites.js" defer></script><script src="paving.js" defer></script><script src="explorer.js" defer></script>
+</head>
+<body class="game-page">
+<a class="skip-link" href="#game-main">탐험 화면으로 이동</a>
+<header class="shell-header"><a class="brand" href="index.html" aria-label="버전 선택으로 돌아가기">JUNBO<span>.</span></a><span class="header-note">체험형 포트폴리오</span><a class="quiet-link" href="normal.html">일반 버전</a></header>
+<main id="game-main" class="game-shell">
+<div class="game-heading"><div><p class="overline">JUNBO SIM / BACKEND DEVELOPER</p><h1>심준보의 전시관</h1></div><a class="quiet-link" href="pdf/resume.pdf" download="심준보_이력서.pdf">이력서 PDF 다운로드</a></div>
+<nav class="room-tabs" aria-label="탐험 구역"><button type="button" data-room="journey" aria-pressed="true">01 이력서</button><button type="button" data-room="gallery" aria-pressed="false">02 프로젝트</button><a href="normal.html#career">경력기술서 전체</a></nav>
+<div class="room-toolbar"><p id="room-description">좌우로 걸으며 학력과 경력을 살펴보세요.</p><label class="motion-control"><input id="reduce-motion" type="checkbox">동작 줄이기</label></div>
+<p id="art-status" class="art-status" role="status" hidden></p>
+<div class="exhibition-layout"><div class="exhibition-stage">
+<section id="viewport" class="viewport" tabindex="0" role="region" aria-label="성장 여정 이동 공간" aria-describedby="control-help">
+<div id="world" class="world">
+<div class="scene-backdrop" aria-hidden="true"></div>
+<div class="journey-path" aria-hidden="true"></div>
+<div class="journey-divider" aria-hidden="true"></div>
+<div id="exhibits" class="exhibits"></div>
+<div id="visitor" class="actor visitor" data-facing="front" data-outfit="suit" aria-hidden="true"><span class="pixel-sprite visitor-front"></span><span class="soccer-ball"></span><span class="actor-name">방문자</span></div>
+</div>
+<div class="scene-corner" aria-hidden="true"><span id="scene-label">이력서 전시</span><span id="scene-position">06 / 06</span></div>
+</section>
+<div class="control-bar"><p id="control-help"><span class="keyboard-help"><kbd>←</kbd><kbd>→</kbd> 이동 <span id="vertical-help" hidden><kbd>↑</kbd><kbd>↓</kbd></span> · <kbd>Space</kbd> 읽기 · <kbd>Esc</kbd> 닫기</span><span class="touch-help">방향 버튼을 누르고 있으면 이동합니다.</span></p><div class="direction-pad" role="group" aria-label="캐릭터 이동"><button type="button" data-dir="up" aria-label="위로 이동" hidden>↑</button><button type="button" data-dir="left" aria-label="왼쪽으로 이동">←</button><button type="button" data-dir="down" aria-label="아래로 이동" hidden>↓</button><button type="button" data-dir="right" aria-label="오른쪽으로 이동">→</button></div></div>
+</div><aside class="exhibition-guide" aria-label="현재 위치와 바로가기">
+<div class="interaction-strip"><div class="location-copy"><span class="overline" id="location-label">현재 위치</span><strong id="location-title"></strong><span id="location-subtitle"></span></div><button id="interact" class="action-button" type="button">이력 읽기 <kbd>Space</kbd></button></div>
+<div class="guide-heading"><h2 id="guide-title">시기별 바로가기</h2><span id="guide-count">6개 구간</span></div>
+<nav id="timeline-nav" class="timeline-nav" aria-label="시기로 바로 이동"></nav>
+<nav id="gallery-map" class="gallery-map" aria-label="3행 3열 전시장 안내도" hidden><div class="gallery-map-heading"><h2>전시장 안내도</h2><p>구역을 누르면 바로 이동합니다.</p></div><div id="gallery-map-grid" class="gallery-map-grid"></div></nav>
+<p class="guide-note" id="guide-note">군 복무 기간은 대학 재학 기간에 포함됩니다.</p>
+</aside></div>
+<p id="announcement" class="sr-only" role="status" aria-live="polite"></p>
+<noscript><p>탐험 기능에는 JavaScript가 필요합니다. <a href="normal.html">일반 버전</a> 또는 <a href="pdf/resume.pdf">이력서 PDF</a>를 이용하세요.</p></noscript>
+</main>
+<dialog id="detail-dialog" aria-labelledby="detail-title"><div class="dialog-top"><span class="overline" id="detail-kind"></span><button id="close-dialog" type="button" aria-label="상세 내용 닫기">닫기 <kbd>Esc</kbd></button></div><div id="detail-content"></div></dialog>
+<footer class="shell-footer"><a href="index.html">버전 선택</a><span>심준보 · Backend Developer</span><a href="normal.html#downloads">모든 PDF</a></footer>
+</body></html>

@@ -1,0 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap');
+
+/* One wordmark definition for the document, entry and exhibition routes. */
+.brand {
+  display: inline-block;
+  flex-shrink: 0;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1.8;
+  letter-spacing: -1px;
+  color: #151d30;
+  text-decoration: none;
+}
+.brand:hover { color: #151d30; }
+.brand span { color: #245bdb; }
+@media (max-width: 650px) { .brand { font-size: 21px; } }
