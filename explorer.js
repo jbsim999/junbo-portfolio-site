@@ -20,15 +20,15 @@
   ].map((stop,index)=>({...stop,x:index*600+300}));
   const projects = profile.projects;
   const gallery = [
-    {label:'통계 성능 개선',project:0},
-    {label:'자료실',description:'이력서·포트폴리오 PDF',href:'normal.html#downloads'},
-    {label:'빈 전시대'},
+    {label:'통계 성능 개선',project:0,description:'집계 구조 · 인덱스 · 쿼리 튜닝',visual:'성능'},
+    {label:'회원수 수집 자동화',project:0,section:'.batch-work',description:'200개 이상 지역 · 20개 단위 병렬 수집',visual:'병렬 수집'},
+    {label:'PDF 자료실',description:'이력서·포트폴리오·경력기술서',href:'normal.html#downloads',visual:'문서'},
     {label:'이력서 전시',description:'학력과 회사별 경력',return:true},
-    {label:'회원 상태 보정',project:1},
-    {label:'빈 전시대'},
+    {label:'회원 상태 보정',project:1,visual:'데이터'},
+    {label:'WEB 탈퇴 처리 통일',project:1,section:'.detail-related',description:'탈퇴 경로 간 Soft Delete 정책 일치',visual:'정책'},
     {label:'경력기술서',description:'담당 업무와 상세 경력',href:'normal.html#career'},
-    {label:'빈 전시대'},
-    {label:'운영 조회 도구',project:2}
+    {label:'운영 도구 화면',project:2,section:'.detail-screens',description:'조회 · 지역 상태 확인 · 동기화',visual:'화면'},
+    {label:'운영 조회 도구',project:2,visual:'연계'}
   ].map((tile,index)=>({...tile,x:index%3*600+300,y:Math.floor(index/3)*520+440,code:String.fromCharCode(65+Math.floor(index/3))+(index%3+1)}));
   const viewport = $('#viewport'), world = $('#world'), visitor = $('#visitor');
   const dialog = $('#detail-dialog'), interact = $('#interact');
@@ -36,6 +36,10 @@
   const state = {room:'journey', x:stops[stops.length-1].x, y:440, stop:stops.length-1, gallery:0, near:'journey', camera:0, cameraY:0, width:stops.length*600, height:520};
   const motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
   let returnFocus = null, lastTime = 0, frame = 0, previousLocation = '';
+  function reveal(element) {
+    if(!window.anime||document.body.classList.contains('reduce-motion'))return;
+    window.anime.animate(element,{opacity:[0,1],translateY:[8,0],duration:260,ease:'out(3)'});
+  }
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   function clearInput() {keys.clear();pointers.clear();visitor.classList.remove('walking');}
   function applyMotion() {document.body.classList.toggle('reduce-motion', $('#reduce-motion').checked);}
@@ -59,7 +63,7 @@
     document.body.dataset.era=era;
     visitor.dataset.outfit=({school:'sport',university:'campus',military:'service',lab:'lab'})[era]||'suit';
   }
-  Promise.all(['assets/visitor-consistency-v8.webp','assets/junbo-props-v4.webp','assets/rooms-open-v10.webp','assets/lab-open-v10.webp','assets/brick-walkway-v10.webp','assets/junbo-life-stages-v7.webp','assets/gallery-objects-v7.webp'].map(src=>new Promise((resolve,reject)=>{
+  Promise.all(['assets/visitor-consistency-v8.webp','assets/junbo-props-v4.webp','assets/rooms-open-v10.webp','assets/lab-open-v10.webp','assets/junbo-life-stages-v7.webp'].map(src=>new Promise((resolve,reject)=>{
     const img=new Image();img.onload=resolve;img.onerror=reject;img.src=src;
   }))).then(()=>document.body.classList.add('era-art-ready')).catch(()=>{
     const notice=$('#art-status');notice.hidden=false;
@@ -68,32 +72,47 @@
   });
   function galleryMarkup(tile,index) {
     const project=projects[tile.project];
-    const empty=!(project||tile.href||tile.return);
-    const content='<p class="overline">'+tile.code+(project?' / PROJECT 0'+(tile.project+1):'')+'</p><h2>'+escape(project?project.title:tile.label)+'</h2>'+(project?'<p class="station-result">'+escape(project.result)+'</p>':'')+(!empty?'<button type="button" data-gallery-action="'+index+'">'+(project?'해결 과정 읽기':tile.return?'이력서 보기':'문서 보기')+'</button>':'<p class="station-empty-note">전시 없음</p>');
-    return '<article class="exhibit gallery-exhibit '+(project?'whiteboard-exhibit':'computer-exhibit')+(empty?' empty-exhibit':'')+'" style="left:'+tile.x+'px;top:'+(Math.floor(index/3)*520+35)+'px" data-gallery-exhibit="'+index+'"><span class="station-art '+(project?'station-board':'station-computer')+'" aria-hidden="true"></span><div class="station-info">'+content+'</div></article>';
+    const core=project&&!tile.section;
+    const visuals={성능:'<strong>30분</strong><i>→</i><strong>100ms</strong>',데이터:'<span>회원 상태</span><i>→</i><span>갱신 규칙</span>',연계:'<span>직접 조회</span><i>↔</i><span>이기종 도서관</span>','병렬 수집':'<strong>20</strong><span>지역 / 그룹</span>',정책:'<span>WEB</span><i>→</i><span>Soft Delete</span>',화면:'<span>조회</span><span>확인</span><span>동기화</span>',문서:'<span>RESUME</span><span>PORTFOLIO</span>'};
+    const summaries=['집계 구조와 인덱스를 정비해 오래 걸리던 통계 조회를 개선했습니다.','과도한 동시 요청을 피하면서 수동 수집 업무를 자동화했습니다.','필요한 문서를 골라 내려받을 수 있습니다.','시기에 따라 달라지는 모습과 함께 경력을 살펴보세요.','회원 상태에 맞게 갱신 조건을 나누고 데이터 정합성을 보완했습니다.','WEB 탈퇴 경로에도 기존 서비스와 같은 처리 방식을 적용했습니다.','회사별 담당 업무와 구현 경험을 정리했습니다.','조회부터 가입지역 확인, 동기화까지 화면의 변화를 살펴보세요.','유지보수 업체나 사서를 거치던 확인 업무를 직접 조회로 바꿨습니다.'];
+    const content='<p class="overline"><span>'+tile.code+' / '+(core?'PROJECT 0'+(tile.project+1):tile.section?'RELATED WORK':'DOCUMENT')+'</span><span>J.</span></p><h2>'+escape(tile.label)+'</h2><p class="station-result">'+escape(tile.description||(core?project.result:tile.return?'학교에서 현재 직장까지':'담당 업무와 문제 해결 기록'))+'</p><div class="station-visual" aria-hidden="true">'+(visuals[tile.visual]||'<span>JUNBO SIM</span>')+'</div><p class="station-summary">'+summaries[index]+'</p><button type="button" data-gallery-action="'+index+'">'+(core?'문제 해결 과정 읽기':tile.section?'구현 내용 보기':tile.return?'이력서로 이동':'문서 열기')+' ↗</button>';
+    return '<article class="exhibit gallery-exhibit '+(core?'station-project':'station-support')+'" style="left:'+tile.x+'px;top:'+(Math.floor(index/3)*520+49)+'px" data-gallery-exhibit="'+index+'"><div class="station-info">'+content+'</div></article>';
   }
   function setRoom(room, focus = true) {
     clearInput();state.room=room;document.body.dataset.scene=room;previousLocation='';
     const journey = room === 'journey';
-    state.x=journey?stops[state.stop].x:gallery[0].x;state.y=440;state.gallery=0;state.width=journey?stops.length*600:1800;state.height=journey?520:1560;
+    state.x=journey?stops[state.stop].x:gallery[0].x;state.y=440;state.gallery=0;state.width=journey?stops.length*600:1800;state.height=journey?520:1640;
     world.style.width=state.width+'px';world.style.height=state.height+'px';
     $('.scene-backdrop').innerHTML=(journey?stops:gallery).map(tile=>'<div class="scene-bay scene-'+(journey?tile.scene:'station')+'"></div>').join('');
     viewport.setAttribute('aria-label',journey?'이력서 전시: 좌우로 이동하는 관람로':'프로젝트 전시: 네 방향으로 이동하는 관람로');
     $('#scene-label').textContent=journey?'이력서 전시':'프로젝트 전시';
-    $('#room-description').textContent=journey?'좌우로 걸으며 학력과 경력을 살펴보세요.':'화이트보드와 컴퓨터 사이를 걸으며 전시를 살펴보세요.';
+    $('#room-description').textContent=journey?'좌우로 걸으며 학력과 경력을 살펴보세요.':'3×3 전시를 둘러보며 프로젝트와 관련 작업을 읽어보세요.';
     $('#guide-title').textContent=journey?'시기별 바로가기':'전시장 안내도';
     $('#guide-count').textContent=journey?'6개 구간':'3 × 3';
-    $('#guide-note').textContent=journey?'군 복무 기간은 대학 재학 기간에 포함됩니다.':'화이트보드에는 프로젝트, 컴퓨터에는 문서를 연결했습니다. 빈 전시대에는 아직 콘텐츠가 없습니다.';
+    $('#guide-note').textContent=journey?'군 복무 기간은 대학 재학 기간에 포함됩니다.':'대각선에 핵심 프로젝트 3개를 배치했습니다. 나머지 구역에는 관련 작업과 경력 문서를 연결했습니다.';
     $('#timeline-nav').hidden=!journey;$('#gallery-map').hidden=journey;$('#vertical-help').hidden=journey;
     document.querySelectorAll('[data-dir="up"],[data-dir="down"]').forEach(button => button.hidden=journey);
     document.querySelectorAll('[data-room]').forEach(button => button.setAttribute('aria-pressed',String(button.dataset.room===room)));
     $('#exhibits').innerHTML=journey?stops.map(stopMarkup).join(''):gallery.map(galleryMarkup).join('');
-    updateLocation();render();
+    updateLocation();render();reveal(viewport);
     if(focus) viewport.focus({preventScroll:true});
   }
-  function jump(index) {clearInput();state.stop=index;state.x=stops[index].x;state.y=440;updateLocation();render();viewport.focus({preventScroll:true});}
-  function galleryJump(index) {clearInput();state.x=gallery[index].x;state.y=gallery[index].y;updateLocation();render();viewport.focus({preventScroll:true});}
-  function galleryAction(index) {const tile=gallery[index];if(tile.project!==undefined)openDetail('project',tile.project);else if(tile.return)setRoom('journey');else if(tile.href)location.assign(tile.href);}
+  function focusExhibit() {
+    viewport.focus({preventScroll:true});
+    // On stacked/mobile layouts the map is below the scene. Bring the changed
+    // exhibit back into view instead of leaving visitors below their destination.
+    const box=viewport.getBoundingClientRect();
+    if(matchMedia('(max-width:800px)').matches&&(box.top<0||box.bottom>innerHeight))viewport.scrollIntoView({block:'start',behavior:'auto'});
+  }
+  function jump(index) {clearInput();state.stop=index;state.x=stops[index].x;state.y=440;updateLocation();render();focusExhibit();}
+  function galleryJump(index) {clearInput();state.x=gallery[index].x;state.y=gallery[index].y;updateLocation();render();focusExhibit();}
+  function galleryAction(index) {
+    const tile=gallery[index];
+    if(tile.project!==undefined){
+      openDetail('project',tile.project);
+      if(tile.section){const section=dialog.querySelector(tile.section);if(section){if(section.tagName==='DETAILS')section.open=true;section.scrollIntoView({block:'start'});}}
+    }else if(tile.return)setRoom('journey');else if(tile.href)location.assign(tile.href);
+  }
   $('#gallery-map-grid').innerHTML=gallery.map((tile,index)=>'<button type="button" data-gallery-jump="'+index+'"><span>'+tile.code+'</span>'+escape(tile.label)+'</button>').join('');
   $('#gallery-map-grid').addEventListener('click',event=>{const button=event.target.closest('[data-gallery-jump]');if(button)galleryJump(Number(button.dataset.galleryJump));});
   $('#timeline-nav').innerHTML=stops.map((stop,index)=>'<button type="button" data-jump="'+index+'">'+escape(stop.short)+'<span>'+escape(stop.period||stop.subtitle||'')+'</span></button>').join('');
@@ -123,7 +142,7 @@
     previousLocation=signature;
     const stop=stops[state.stop];
     const tile=gallery[state.gallery], project=projects[tile.project];
-    const title=state.room==='journey'?stop.title:tile.code+' · '+(project?project.title:tile.label);
+    const title=state.room==='journey'?stop.title:tile.code+' · '+tile.label;
     $('#location-title').textContent=title;
     $('#scene-position').textContent=state.room==='journey'?String(state.stop+1).padStart(2,'0')+' / '+String(stops.length).padStart(2,'0'):tile.code+' / 3 × 3';
     $('#location-subtitle').textContent=state.room==='journey'?(stop.scenic?[stop.period,stop.subtitle].filter(Boolean).join(' · '):stop.period):(project?project.period:tile.description||'다른 전시로 자유롭게 이동하세요.');
@@ -139,13 +158,13 @@
     const scale=matchMedia('(max-width:600px)').matches ? 0.8 : 1;
     const viewWidth=viewport.clientWidth/scale,viewHeight=viewport.clientHeight/scale;
     world.style.width=Math.max(state.width,viewWidth)+'px';
-    window.renderBrickPath($('.journey-path'),Math.max(state.width,viewWidth));
     state.camera=clamp(state.x-viewWidth/2,0,Math.max(0,state.width-viewWidth));
     state.cameraY=state.room==='journey'?0:clamp(state.y-viewHeight+105,0,Math.max(0,state.height-viewHeight));
     world.style.transform='scale('+scale+') translate('+(-state.camera)+'px,'+(-state.cameraY)+'px)';
     visitor.style.transform='translate('+(state.x-40)+'px,'+(state.y-70)+'px)';
     window.renderVisitorSprite(visitor.querySelector('.pixel-sprite'),visitor.dataset.outfit,visitor.dataset.facing);
     visitor.dataset.x=state.x.toFixed(1);visitor.dataset.y=state.y.toFixed(1);
+    window.archiveRenderer?.update(state,scale);
   }
   function projectEvidence(project) {
     const decisions='<details class="detail-decisions"><summary>구현에서 중요했던 판단</summary><dl>'+project.decisions.map(([subject,choice,reason])=>'<dt>'+escape(subject)+'</dt><dd><strong>'+escape(choice)+'</strong><p>'+escape(reason)+'</p></dd>').join('')+'</dl></details>';
@@ -171,6 +190,7 @@
     }
     $('#detail-content').innerHTML=html;
     dialog.showModal();dialog.scrollTop=0;$('#close-dialog').focus({preventScroll:true});
+    reveal($('#detail-content'));
   }
   function activate() {if(!state.near||dialog.open)return;if(state.room==='gallery')galleryAction(state.gallery);else openDetail('journey');}
   interact.addEventListener('click',activate);
@@ -202,6 +222,8 @@
   window.addEventListener('blur',clearInput);
   document.addEventListener('visibilitychange',()=>{clearInput();lastTime=0;if(document.hidden){cancelAnimationFrame(frame);frame=0;}else if(!frame)frame=requestAnimationFrame(tick);});
   document.querySelectorAll('[data-dir]').forEach(button=>{
+    button.addEventListener('contextmenu',event=>event.preventDefault());
+    button.addEventListener('selectstart',event=>event.preventDefault());
     button.addEventListener('pointerdown',event=>{
       if(dialog.open)return;event.preventDefault();button.setPointerCapture(event.pointerId);
       const d=button.dataset.dir;pointers.set(event.pointerId,d);
@@ -220,7 +242,7 @@
       const walkable=(x,y)=>!gallery.some((tile,index)=>{const top=Math.floor(index/3)*520;return x>tile.x-180&&x<tile.x+180&&y>top+40&&y<top+360;});
       const nextX=clamp(state.x+dx,28,state.width-28);
       if(walkable(nextX,state.y))state.x=nextX;
-      const nextY=clamp(state.y+dy,28,state.height-35);
+      const nextY=clamp(state.y+dy,28,1525);
       if(walkable(state.x,nextY))state.y=nextY;
     }
     if(dx||dy){

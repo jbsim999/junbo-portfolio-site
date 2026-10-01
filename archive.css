@@ -1,0 +1,83 @@
+/* Neon archive: restrained material and clear reading surfaces. */
+.entry-page .mode-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto auto auto;row-gap:0}
+.entry-page .mode-card{display:grid;grid-template-rows:auto minmax(244px,1fr) auto}
+@supports(grid-template-rows:subgrid){.entry-page .mode-card{grid-row:span 3;grid-template-rows:subgrid;row-gap:0}}
+.entry-page .studio-preview{height:auto;min-height:244px}
+.entry-page .reading-preview{height:auto;min-height:244px;padding-bottom:26px}
+.entry-page .preview-tags{flex-wrap:wrap}
+.entry-page .reading-preview strong{overflow-wrap:anywhere}
+.entry-page .reading-preview p{flex-wrap:wrap}
+.entry-page .preview-path{background:repeating-linear-gradient(0deg,transparent 0 27px,#060f1c 28px,#4c5c6d66 29px,transparent 30px),repeating-linear-gradient(90deg,#1d2835 0 97px,#101923 98px,#63738444 99px,#202c38 100px)}
+.entry-page .preview-path .paving-tile{display:none}
+.entry-page .preview-divider{top:calc(66% - 10px);height:12px;background:#6ad8e418;border-top:2px solid #506879;border-bottom:1px solid #8bdfec;box-shadow:0 5px 12px #52cbd61c}
+.game-page .viewport{background:#18232e;border-color:#314b60;border-radius:12px}
+#render-surface{position:absolute;inset:0;pointer-events:none}
+#render-surface canvas{display:block;width:100%;height:100%}
+.pixi-ready .scene-backdrop,.pixi-ready .journey-path,.pixi-ready .journey-divider{visibility:hidden}
+.game-page .journey-path{background:repeating-linear-gradient(0deg,transparent 0 43px,#070f18 44px),repeating-linear-gradient(90deg,#202b36 0 166px,#080f18 167px,#1c2631 168px)}
+.game-page .journey-path .paving-tile{display:none}
+.game-page .journey-divider{top:313px;height:30px;background:#6eb0c512;border-top:3px solid #526574;border-bottom:2px solid #70d1e2}
+.game-page .scene-corner{inset:12px 14px auto;pointer-events:none;z-index:3}
+.game-page .scene-corner span{color:#d9e8f2;border-color:#8aa7b644;background:#0e1b2ae8;font-size:11px;letter-spacing:.5px}
+.game-page[data-scene=journey] .exhibit{top:42px;width:340px}
+.game-page[data-scene=journey] .exhibit-info{min-height:158px;padding:16px 20px;background:#fffffff2;border:1px solid #d9e6ed;border-radius:8px;box-shadow:0 10px 24px #08132326}
+.game-page[data-scene=journey] .exhibit-info h2{font-size:18px;line-height:1.5}
+.game-page[data-scene=journey] .exhibit-info p{font-size:14px;line-height:1.6;margin-bottom:8px}
+.game-page[data-scene=journey] .exhibit-info .overline{font-size:12px;letter-spacing:.2px}
+.game-page[data-scene=journey] .npc-display{top:166px}
+.game-page .visitor.walking{animation:none}
+.game-page .actor-name{background:#0c192be8;color:#e2eff7;border:1px solid #7997ac66;font-size:11px;padding:1px 7px}
+.game-page .visitor .actor-name{display:none}
+/* Real projects use the same terminal system as their supporting exhibits. */
+.game-page .gallery-exhibit{width:330px;height:306px}
+.game-page .gallery-exhibit .station-info{position:relative;top:0;left:0;transform:none;width:100%;height:286px;padding:22px 24px;text-align:left;color:#dbe8f0;border:1px solid #547481;background:linear-gradient(135deg,#142738,#0e1d2e);border-radius:9px;box-shadow:0 14px 28px #040d1840;display:flex;flex-direction:column;gap:6px}
+.game-page .gallery-exhibit.current .station-info{border-color:#89deec;box-shadow:0 0 0 1px #89deec22,0 14px 28px #040d1840}
+.game-page .station-info .overline{font-size:11px;letter-spacing:1px;color:#9eb8c9;margin:0;display:flex;justify-content:space-between}
+.game-page .station-info h2{font-size:23px;font-weight:700;line-height:1.4;letter-spacing:-.6px;color:#f2f8fc;margin:0}
+.game-page .station-result{font-size:14px;font-weight:500;line-height:1.6;color:#b6d0de;margin:0}
+.station-summary{color:#a8bcca;font-size:13px;line-height:1.55;margin:0}
+.station-visual{display:flex;align-items:center;gap:8px;min-height:32px;color:#a7dce6;font-size:12px}
+.station-visual strong{font-size:24px;letter-spacing:-1px;color:#98e2eb;font-weight:600}
+.station-visual span{border:1px solid #547c8b6e;border-radius:4px;padding:4px 8px}
+.station-visual i{font-style:normal;color:#658695}
+.game-page .station-info button{margin-top:auto;align-self:flex-start;min-height:38px;padding:7px 12px;border:1px solid #87b3c455;background:#244559;color:#e0f3f8;border-radius:5px;font-size:13px}
+.game-page .gallery-exhibit.current .station-info button{background:#93ddeb;color:#112a37;border-color:#93ddeb}
+.station-support .station-info h2{font-size:21px}
+.game-page .direction-pad{position:absolute;inset:auto 16px 14px;z-index:5;display:flex;justify-content:space-between;pointer-events:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.game-page .direction-pad button{pointer-events:auto;width:48px;height:46px;min-width:44px;border:1px solid #99bfce66;background:#102234ed;color:#d9eef7;border-radius:9px;box-shadow:0 3px 12px #0003;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;display:grid;place-items:center}
+.direction-pad button::before{content:'';width:10px;height:10px;border-top:2px solid currentColor;border-right:2px solid currentColor;transform:rotate(45deg)}
+.direction-pad [data-dir=left]::before{transform:rotate(-135deg)}
+.direction-pad [data-dir=up]::before{transform:rotate(-45deg)}
+.direction-pad [data-dir=down]::before{transform:rotate(135deg)}
+.game-page .direction-pad button:hover,.game-page .direction-pad button:active{background:#244b60;color:#c0f1f5;border-color:#a3e8ee}
+.game-page[data-scene=gallery] .direction-pad{inset:auto 14px 12px auto;display:grid;grid-template-columns:repeat(4,46px);grid-template-rows:44px;gap:5px;padding:5px;border-radius:12px;background:#08132166}
+.game-page[data-scene=gallery] .direction-pad [data-dir]{grid-column:auto;grid-row:1}
+.game-page[data-scene=gallery] .direction-pad [data-dir=left]{order:-1}
+.game-page[data-scene=gallery] .direction-pad button{width:46px;height:44px}
+.game-page .control-bar{min-height:42px;padding:10px 2px 0}
+.game-page .control-bar p{font-size:12px;line-height:1.6}
+.game-page .exhibition-guide{border-radius:12px}
+.game-page .gallery-map-grid button{min-height:80px;font-size:12px;line-height:1.5}
+@media(max-width:800px){.game-page .gallery-map-grid button{min-height:72px;font-size:13px}}
+@media(max-width:700px){.entry-page .mode-grid{grid-template-columns:minmax(0,1fr);grid-template-rows:none;row-gap:24px}.entry-page .mode-card{grid-row:auto;grid-template-rows:auto minmax(220px,1fr) auto}}
+@media(max-width:600px){
+ .entry-page .reading-preview{min-height:220px}
+ .entry-page .mode-card{grid-template-rows:auto minmax(220px,1fr) auto}
+ .entry-page .studio-preview{min-height:220px}
+ .game-page .viewport{height:460px;border-radius:10px}
+ .game-page[data-scene=journey] .exhibit{top:42px;width:326px}
+ .game-page[data-scene=journey] .exhibit-info{min-height:158px;padding:12px 18px}
+ .game-page[data-scene=journey] .exhibit-info h2{font-size:20px}
+ .game-page[data-scene=journey] .exhibit-info p{font-size:15px}
+ .game-page[data-scene=journey] .exhibit-info .overline{font-size:13px}
+ .game-page[data-scene=journey] .npc-display{top:166px}
+ .game-page .gallery-exhibit{width:330px}
+ .game-page .gallery-exhibit .station-info{padding:20px;height:286px}
+ .game-page .station-info h2{font-size:24px}
+ .game-page .station-result{font-size:16px}
+ .game-page .station-summary{font-size:14px}
+ .game-page .station-info button{font-size:15px;min-height:42px}
+ .game-page .direction-pad{inset:auto 14px 14px}
+ .game-page .touch-help{max-width:none;font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){.game-page .world{will-change:auto}}

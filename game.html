@@ -9,7 +9,9 @@
 <link rel="stylesheet" href="batch.css">
 <link rel="stylesheet" href="brand.css">
 <link rel="stylesheet" href="exhibition-theme.css">
-<script src="content.js" defer></script><script src="projects.js" defer></script><script src="batch-view.js" defer></script><script src="visitor-sprites.js" defer></script><script src="paving.js" defer></script><script src="explorer.js" defer></script>
+<link rel="stylesheet" href="archive.css">
+<script src="vendor/pixi-8.21.0.min.js" defer></script><script src="vendor/anime-4.5.0.min.js" defer></script>
+<script src="content.js" defer></script><script src="projects.js" defer></script><script src="batch-view.js" defer></script><script src="visitor-sprites.js" defer></script><script src="paving.js" defer></script><script src="archive-renderer.js" defer></script><script src="explorer.js" defer></script>
 </head>
 <body class="game-page">
 <a class="skip-link" href="#game-main">탐험 화면으로 이동</a>
@@ -21,6 +23,7 @@
 <p id="art-status" class="art-status" role="status" hidden></p>
 <div class="exhibition-layout"><div class="exhibition-stage">
 <section id="viewport" class="viewport" tabindex="0" role="region" aria-label="성장 여정 이동 공간" aria-describedby="control-help">
+<div id="render-surface" aria-hidden="true"></div>
 <div id="world" class="world">
 <div class="scene-backdrop" aria-hidden="true"></div>
 <div class="journey-path" aria-hidden="true"></div>
@@ -29,8 +32,9 @@
 <div id="visitor" class="actor visitor" data-facing="front" data-outfit="suit" aria-hidden="true"><span class="pixel-sprite visitor-front"></span><span class="soccer-ball"></span><span class="actor-name">방문자</span></div>
 </div>
 <div class="scene-corner" aria-hidden="true"><span id="scene-label">이력서 전시</span><span id="scene-position">06 / 06</span></div>
+<div class="direction-pad" role="group" aria-label="캐릭터 이동"><button type="button" data-dir="up" aria-label="위로 이동" hidden></button><button type="button" data-dir="left" aria-label="왼쪽으로 이동"></button><button type="button" data-dir="down" aria-label="아래로 이동" hidden></button><button type="button" data-dir="right" aria-label="오른쪽으로 이동"></button></div>
 </section>
-<div class="control-bar"><p id="control-help"><span class="keyboard-help"><kbd>←</kbd><kbd>→</kbd> 이동 <span id="vertical-help" hidden><kbd>↑</kbd><kbd>↓</kbd></span> · <kbd>Space</kbd> 읽기 · <kbd>Esc</kbd> 닫기</span><span class="touch-help">방향 버튼을 누르고 있으면 이동합니다.</span></p><div class="direction-pad" role="group" aria-label="캐릭터 이동"><button type="button" data-dir="up" aria-label="위로 이동" hidden>↑</button><button type="button" data-dir="left" aria-label="왼쪽으로 이동">←</button><button type="button" data-dir="down" aria-label="아래로 이동" hidden>↓</button><button type="button" data-dir="right" aria-label="오른쪽으로 이동">→</button></div></div>
+<div class="control-bar"><p id="control-help"><span class="keyboard-help"><kbd>←</kbd><kbd>→</kbd> 이동 <span id="vertical-help" hidden><kbd>↑</kbd><kbd>↓</kbd></span> · <kbd>Space</kbd> 읽기 · <kbd>Esc</kbd> 닫기</span><span class="touch-help">화면 안 방향 버튼으로 이동 · 상세 내용은 아래에서 읽기</span></p></div>
 </div><aside class="exhibition-guide" aria-label="현재 위치와 바로가기">
 <div class="interaction-strip"><div class="location-copy"><span class="overline" id="location-label">현재 위치</span><strong id="location-title"></strong><span id="location-subtitle"></span></div><button id="interact" class="action-button" type="button">이력 읽기 <kbd>Space</kbd></button></div>
 <div class="guide-heading"><h2 id="guide-title">시기별 바로가기</h2><span id="guide-count">6개 구간</span></div>
