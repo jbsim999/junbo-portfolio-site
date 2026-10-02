@@ -4,6 +4,16 @@
 #fishing-layer{position:absolute;inset:0;z-index:2;overflow:hidden}
 #fishing-layer[hidden],#fishing-guide[hidden],#fishing-layer [hidden]{display:none!important}
 #fishing-canvas{display:block;width:100%;height:100%;pointer-events:none}
+.fishing-points{display:none;gap:6px;margin:0 0 10px}
+.fishing-points[hidden]{display:none!important}
+.fishing-points button{min-height:44px;border:1px solid #d9e6dd;border-radius:8px;background:#f7faf5;color:#46675d;font:inherit;font-size:12px;cursor:pointer}
+.fishing-points span{font-size:10px;color:#7a9184;margin-right:5px;font-variant-numeric:tabular-nums}
+.fishing-points button[aria-pressed=true]{background:#edf4e9;border-color:#91b4a2;color:#244e47}
+.fishing-points button:focus-visible{outline:3px solid #e2b763;outline-offset:2px}
+.fish-zone{position:absolute;transform:translate(-50%,-50%);border:0;border-radius:50%;background:transparent;cursor:pointer;touch-action:manipulation;color:transparent}
+.fish-zone:hover{background:#effff00d;box-shadow:inset 0 0 0 2px #fffae8aa}
+.fish-zone:focus-visible{outline:3px solid #ffe4a2!important;outline-offset:3px}
+@media(max-width:1100px){.fishing-points{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}}
 .fishing-active .scene-corner{inset:12px 14px auto;justify-content:flex-start;z-index:4}
 .fishing-active .scene-corner span{background:#fffdf4e8;color:#244c54;border-color:#e8efe3;box-shadow:0 2px 8px #205c6814;text-shadow:none;font-size:11px}
 .fishing-active #scene-position{display:none}

@@ -16,6 +16,10 @@
 .pixi-ready .scene-backdrop,.pixi-ready .journey-path,.pixi-ready .journey-divider{visibility:hidden}
 .game-page .journey-path{background:linear-gradient(125deg,transparent 20%,#c6dce51c 46%,transparent 64%),repeating-linear-gradient(0deg,transparent 0 40px,#233d4e 41px 42px),repeating-linear-gradient(90deg,#405d70 0 82px,#233d4e 83px 84px)}
 .game-page .journey-path .paving-tile{display:none}
+#perspective-floor-fallback{position:absolute;top:0;pointer-events:none}
+.game-page[data-scene=journey] .journey-path{overflow:visible}
+.game-page[data-scene=journey] .scene-bay{position:relative}
+.game-page[data-scene=journey]:not(.pixi-ready) .scene-bay:not(:last-child)::after{content:'';position:absolute;z-index:1;right:-17px;top:8px;width:34px;height:332px;background:linear-gradient(90deg,#425c6e 0 4px,#d6e9ec4d 4px 27px,#425c6e 27px 31px,#91afbd 31px);border-top:5px solid #687f8e;border-bottom:6px solid #4b6474;clip-path:polygon(0 0,100% 4%,100% 98%,0 100%);box-shadow:3px 0 7px #1c344c33}
 .game-page .journey-divider{display:none!important}
 .game-page .scene-corner{inset:12px 14px auto;pointer-events:none;z-index:3}
 .game-page .scene-corner span{color:#d9e8f2;border-color:#8aa7b644;background:#0e1b2ae8;font-size:11px;letter-spacing:.5px}

@@ -2,24 +2,24 @@
    World geometry, actor baselines, camera and effects have one coordinate space. */
 (() => {
   'use strict';
-  const W=1800,H=520,FOOT=440;
+  const W=1080,H=520,FOOT=440;
   const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
   const lerp=(a,b,t)=>a+(b-a)*t;
   const ease=t=>1-Math.pow(1-clamp(t,0,1),3);
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const projects=window.PROFILE.projects;
   const sites=[
-    {id:'statistics',x:300,y:190,label:'통계 조회 성능 개선',color:['#466c80','#87bac8','#d3e7e5']},
-    {id:'consistency',x:900,y:214,label:'회원 상태 데이터 보정',color:['#537768','#a6c7a1','#e2e7c7']},
-    {id:'operations',x:1500,y:190,label:'운영 도구 · 이기종 연계',color:['#856951','#c6aa7b','#eee0b9']}
+    {id:'statistics',x:180,y:222,label:'통계 조회 성능 개선',color:['#466c80','#87bac8','#d3e7e5']},
+    {id:'consistency',x:540,y:222,label:'회원 상태 데이터 보정',color:['#537768','#a6c7a1','#e2e7c7']},
+    {id:'operations',x:900,y:222,label:'운영 도구 · 이기종 연계',color:['#856951','#c6aa7b','#eee0b9']}
   ];
   const settingKey='junbo-fishing-v1';
-  const state={active:false,selected:0,x:300,y:FOOT,camera:0,phase:'idle',elapsed:0,clock:0,goal:null,progress:0,hold:false,walking:false,facing:1,frame:0,caught:new Set(),assist:true,sound:false};
+  const state={active:false,selected:0,x:180,y:FOOT,camera:0,phase:'idle',elapsed:0,clock:0,goal:null,progress:0,hold:false,walking:false,facing:1,frame:0,caught:new Set(),assist:true,sound:false};
   try{const saved=JSON.parse(localStorage.getItem(settingKey)||'null');if(saved&&typeof saved==='object'){state.caught=new Set((Array.isArray(saved.caught)?saved.caught:[]).filter(id=>sites.some(s=>s.id===id)));if(typeof saved.assist==='boolean')state.assist=saved.assist;if(typeof saved.sound==='boolean')state.sound=saved.sound;}}catch{}
-  let api,viewport,layer,guide,canvas,c,action,status,meter,catchPanel,live,scale=1,visible=true,raf=0,last=0,lastDraw=0,bookSignature='',movingUntil=0,reelSoundAt=0;
+  let api,viewport,layer,guide,canvas,c,action,status,meter,catchPanel,live,pointNav,scale=1,visible=true,raf=0,last=0,lastDraw=0,bookSignature='',movingUntil=0,reelSoundAt=0,drawCount=0;
   const assets={},fishArt=[],particles=[],rings=[],sprite={size:160,foot:148};
   const loaded={beach:false,poses:false,visitor:false};
-  let audio=null,master=null,ticking=false,assetsRequested=false;
+  let audio=null,master=null,ticking=false,assetsRequested=false,lastStepX=state.x;
   const allowedMovement=()=>['idle','walk','caught'].includes(state.phase);
   function save(){try{localStorage.setItem(settingKey,JSON.stringify({caught:[...state.caught],assist:state.assist,sound:state.sound}));}catch{}}
   function image(key,src){const img=new Image();assets[key]=img;img.onload=()=>{loaded[key]=true;draw(true);};img.onerror=()=>{loaded[key]=false;layer.dataset.artFallback='true';draw(true);};img.src=src;}
@@ -96,7 +96,9 @@
     if(dx){state.facing=dx<0?-1:1;movingUntil=performance.now()+110;state.walking=true;}
     const nearest=sites.reduce((best,s,i)=>Math.abs(s.x-state.x)<Math.abs(sites[best].x-state.x)?i:best,0);
     if(nearest!==state.selected){state.selected=nearest;refresh();}
-    wake();
+    // Input updates position, but only the fishing RAF paints it together with
+    // its camera. Painting here alternated stale/new camera positions (jitter).
+    wake(false);
   }
   function refresh(){
     if(!layer)return;
@@ -121,15 +123,16 @@
       guide.querySelector('.fish-book-count').textContent=state.caught.size+' / 3';
     }
     layer.querySelectorAll('[data-school]').forEach(b=>{const current=Number(b.dataset.school)===state.selected;b.setAttribute('aria-pressed',String(current));b.setAttribute('aria-current',String(current));});
+    pointNav.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.fishPoint)===state.selected)));
   }
   function geometry(){
     scale=Math.min(1,viewport.clientHeight/H);
     const visibleWidth=viewport.clientWidth/scale;
-    return {visibleWidth,camera:clamp(state.x-visibleWidth/2,0,Math.max(0,W-visibleWidth))};
+    return {visibleWidth,camera:visibleWidth>=W?(W-visibleWidth)/2:clamp(state.x-visibleWidth/2,0,W-visibleWidth)};
   }
   function resize(){if(!canvas)return;const d=Math.min(devicePixelRatio||1,1.75);const width=Math.max(1,viewport.clientWidth),height=Math.max(1,viewport.clientHeight);if(canvas.width!==Math.round(width*d)||canvas.height!==Math.round(height*d)){canvas.width=Math.round(width*d);canvas.height=Math.round(height*d);}state.camera=geometry().camera;draw(true);}
   function heroPose(){
-    if(state.walking||state.phase==='walk')return Math.floor(state.clock*8)%2+1;
+    if(state.walking||state.phase==='walk')return Math.floor(state.clock*5)%2+1;
     if(state.phase==='windup')return 3;
     if(state.phase==='cast')return state.elapsed<.18?3:4;
     if(['settle','waiting','bite'].includes(state.phase))return 5;
@@ -141,19 +144,19 @@
     c.save();c.globalAlpha=alpha;c.translate(x,foot);
     const walking=state.walking||state.phase==='walk';
     if(walking&&state.facing<0)c.scale(-1,1);
-    const bounce=reduced()?0:walking?Math.sin(state.clock*16)*1.4:state.phase==='hook'?-Math.sin(clamp(state.elapsed/.22,0,1)*Math.PI)*5:state.phase==='land'?-Math.sin(clamp(state.elapsed/.85,0,1)*Math.PI)*7:0;
+    const bounce=reduced()?0:walking?Math.sin(state.clock*10)*.45:state.phase==='hook'?-Math.sin(clamp(state.elapsed/.22,0,1)*Math.PI)*5:state.phase==='land'?-Math.sin(clamp(state.elapsed/.85,0,1)*Math.PI)*7:0;
     if(loaded.poses){c.imageSmoothingEnabled=false;c.drawImage(assets.poses,pose%4*sprite.size,Math.floor(pose/4)*sprite.size,sprite.size,sprite.size,-40,-74+bounce,80,80);}
     else if(loaded.visitor){const img=assets.visitor,w=64*img.naturalWidth/img.naturalHeight;c.imageSmoothingEnabled=false;c.drawImage(img,-w/2,-64+bounce,w,64);}
     else{c.fillStyle='#bead84';c.fillRect(-15,-63,30,8);c.fillStyle='#e5b992';c.fillRect(-10,-55,20,19);c.fillStyle='#527469';c.fillRect(-13,-35,26,22);c.fillStyle='#344b61';c.fillRect(-10,-13,8,10);c.fillRect(2,-13,8,10);c.fillStyle='#283a3b';c.fillRect(-11,-4,10,4);c.fillRect(2,-4,10,4);}
     c.restore();
   }
   function fishShadow(x,y,a,depth=1){
-    c.save();c.translate(x,y);c.rotate(a);c.globalAlpha=.24*depth;c.fillStyle='#24546b';c.beginPath();c.ellipse(0,0,15,5,0,0,Math.PI*2);c.fill();c.beginPath();c.moveTo(-12,0);c.lineTo(-22,-7);c.lineTo(-19,1);c.lineTo(-22,7);c.closePath();c.fill();c.restore();
+    c.save();c.translate(x,y);c.rotate(a);c.globalAlpha=.72*depth;c.fillStyle='#174759';c.strokeStyle='#b9ece4';c.lineWidth=.8;c.beginPath();c.ellipse(0,0,22,7.5,0,0,Math.PI*2);c.fill();c.stroke();c.beginPath();c.moveTo(-18,0);c.lineTo(-31,-10);c.lineTo(-27,1);c.lineTo(-31,10);c.closePath();c.fill();c.fillStyle='#d2efdf';c.globalAlpha=.48*depth;c.fillRect(13,-2,2,2);c.restore();
   }
   function fallbackBeach(){
     const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'#6aafc9');g.addColorStop(.62,'#a7dcd7');g.addColorStop(1,'#d3eee0');c.fillStyle=g;c.fillRect(0,0,W,H);c.fillStyle='#efdeb7';c.beginPath();c.moveTo(0,H);c.lineTo(0,338);for(let x=0;x<=W;x+=8)c.lineTo(x,338+Math.sin(x*.014)*5);c.lineTo(W,H);c.closePath();c.fill();
     for(let i=0;i<350;i++){c.fillStyle=i%3?'#bda57655':'#fff4d680';c.fillRect((i*79+23)%W,354+(i*29)%158,i%7===0?3:1,1);}
-    for(const x of [85,1720]){c.fillStyle='#887f62';c.fillRect(x,369,20,12);c.fillStyle='#a6ae7f';c.fillRect(x+6,352,5,25);c.fillRect(x-4,358,5,18);}
+    for(const x of [85,W-80]){c.fillStyle='#887f62';c.fillRect(x,369,20,12);c.fillStyle='#a6ae7f';c.fillRect(x+6,352,5,25);c.fillRect(x-4,358,5,18);}
   }
   function water(){
     if(reduced())return;
@@ -186,16 +189,21 @@
     }c.restore();
   }
   function draw(force=false){
-    if(!c||!state.active||!visible||document.hidden)return;
-    const {camera}=geometry();if(reduced()||force&&!state.walking&&state.phase!=='walk')state.camera=camera;
+    if(!c||!state.active||document.hidden||!visible&&!force)return;
+    geometry();
     const width=viewport.clientWidth,height=viewport.clientHeight,d=canvas.width/Math.max(1,width);
     c.setTransform(d,0,0,d,0,0);c.clearRect(0,0,width,height);c.save();c.scale(scale,scale);
     const shake=reduced()?0:state.phase==='hook'?Math.sin(state.elapsed*55)*1.6*(1-clamp(state.elapsed/.22,0,1)):0;
     c.translate(-state.camera+shake,0);
-    c.imageSmoothingEnabled=false;if(loaded.beach)c.drawImage(assets.beach,0,0,W,600);else fallbackBeach();
+    c.imageSmoothingEnabled=false;if(loaded.beach){const image=assets.beach,bgWidth=Math.max(W,width/scale),cropWidth=Math.min(image.naturalWidth,bgWidth);c.drawImage(image,(image.naturalWidth-cropWidth)/2,0,cropWidth,image.naturalHeight,(W-bgWidth)/2,0,bgWidth,600);}else{c.fillStyle='#7fbfc4';c.fillRect(state.camera,0,width/scale,H);c.fillStyle='#efdeb7';c.fillRect(state.camera,338,width/scale,H-338);fallbackBeach();}
     water();
-    sites.forEach((site,i)=>{for(let n=0;n<5;n++){const t=state.clock*.48+n*1.24+i;const motion=reduced()?0:Math.sin(t)*5;fishShadow(site.x+(n*19)%63-28+motion,site.y+(n%3)*10-7,Math.sin(t)*.16,.8+(n%2)*.2);}
-      if(i===state.selected){c.strokeStyle='#3e7c8959';c.lineWidth=.9;c.beginPath();c.ellipse(site.x,site.y+4,45,22,0,0,Math.PI*2);c.stroke();}
+    sites.forEach((site,i)=>{
+      const selected=i===state.selected;
+      c.save();c.fillStyle=selected?'#153e5542':'#19475b2c';c.strokeStyle=selected?'#fff4c5':'#d9f5e2bb';c.lineWidth=selected?2:1.2;c.beginPath();c.ellipse(site.x,site.y+4,104,49,0,0,Math.PI*2);c.fill();c.stroke();
+      c.setLineDash([3,9]);c.strokeStyle=selected?'#fff5d28c':'#dcf7ed55';c.lineWidth=1;c.beginPath();c.ellipse(site.x,site.y+4,111,55,0,0,Math.PI*2);c.stroke();c.restore();
+      for(let n=0;n<5;n++){const t=state.clock*.48+n*1.24+i;const motion=reduced()?0:Math.sin(t)*5;fishShadow(site.x+[-52,-8,46,-34,34][n]+motion,site.y+[-14,-22,-6,18,23][n],Math.sin(t)*.13,.85+(n%2)*.15);}
+      // A grounded shoreline marker ties the visible shoal to its casting point.
+      c.fillStyle=selected?'#fff0c099':'#ffffff44';c.beginPath();c.ellipse(site.x,FOOT+3,24,5,0,0,Math.PI*2);c.fill();
     });
     rings.forEach(r=>{c.globalAlpha=(1-r.age/r.life)*.55;c.strokeStyle='#f5fff8';c.lineWidth=1.2;c.beginPath();c.ellipse(r.x,r.y,4+r.age/r.life*28,(4+r.age/r.life*28)*.42,0,0,Math.PI*2);c.stroke();});c.globalAlpha=1;
     c.fillStyle='#aa916433';c.beginPath();c.ellipse(state.x,state.y+2,18,4,0,0,Math.PI*2);c.fill();
@@ -209,14 +217,20 @@
       const onScreen=x>pad+half&&x<width-pad-half;b.hidden=!onScreen;b.inert=!onScreen;
       if(onScreen){b.style.left=x+'px';b.style.top=Math.max((site.y-90)*scale,12+status.offsetHeight+14+b.offsetHeight/2)+'px';}
     });
-    layer.dataset.camera=state.camera.toFixed(2);layer.dataset.x=state.x.toFixed(2);layer.dataset.spriteFrame=String(heroPose());
+    layer.querySelectorAll('[data-school-zone]').forEach(b=>{const site=sites[Number(b.dataset.schoolZone)],x=(site.x-state.camera)*scale,w=218*scale;b.hidden=x<w/2+8||x>width-w/2-8;b.inert=b.hidden;b.style.left=x+'px';b.style.top=(site.y+4)*scale+'px';b.style.width=w+'px';b.style.height=112*scale+'px';});
+    layer.dataset.camera=state.camera.toFixed(2);layer.dataset.x=state.x.toFixed(2);layer.dataset.spriteFrame=String(heroPose());layer.dataset.drawCount=String(++drawCount);
   }
   function step(dt){
     if(document.getElementById('detail-dialog').open){state.hold=false;state.walking=false;return;}
     state.clock+=dt;state.elapsed+=dt;
     if(state.goal!==null){const delta=state.goal-state.x;state.facing=delta<0?-1:1;state.walking=true;state.x+=Math.sign(delta)*Math.min(Math.abs(delta),500*dt);if(Math.abs(delta)<3){state.x=state.goal;state.goal=null;state.walking=false;phase('idle');}}
     else state.walking=performance.now()<movingUntil;
-    const target=geometry().camera;state.camera=reduced()?target:lerp(state.camera,target,1-Math.exp(-dt*11));
+    const target=geometry().camera,manual=performance.now()<movingUntil,dx=state.x-lastStepX;
+    let next=reduced()?target:lerp(state.camera,target,1-Math.exp(-dt*11));
+    // A following camera must not outrun/reverse the visitor during held input,
+    // including the transition from auto-walking to keyboard/touch movement.
+    if(manual&&!reduced()){const delta=next-state.camera;next=state.camera+(dx>0?clamp(delta,0,dx):dx<0?clamp(delta,dx,0):0);}
+    state.camera=next;lastStepX=state.x;
     if(!reduced()&&state.walking&&Math.floor(state.clock*10)!==state.lastDust){state.lastDust=Math.floor(state.clock*10);burst(state.x-9*state.facing,state.y,'dust',2);}
     const duration=reduced()?.09:.24;
     if(state.phase==='windup'&&state.elapsed>=duration)phase('cast');
@@ -240,15 +254,16 @@
     if(document.getElementById('detail-dialog').open){last=0;clearHeld();return;}
     const dt=last?Math.min((time-last)/1000,.05):0;last=time;
     ticking=true;step(dt);ticking=false;
-    const playing=!['idle','caught'].includes(state.phase)||state.walking||particles.length||rings.length;
-    if(!reduced()||playing){if(time-lastDraw>=1000/30||reduced()){draw();lastDraw=time;}}
+    const cameraMoving=Math.abs(geometry().camera-state.camera)>.02;
+    const playing=!['idle','caught'].includes(state.phase)||state.walking||particles.length||rings.length||cameraMoving;
+    if(!reduced()||playing){if(state.walking||cameraMoving||time-lastDraw>=1000/30||reduced()){draw();lastDraw=time;}}
     if(!reduced()||playing)raf=requestAnimationFrame(tick);else last=0;
   }
-  function wake(){if(state.active&&visible&&!document.hidden&&!raf&&!ticking){last=0;raf=requestAnimationFrame(tick);}draw(true);}
+  function wake(paint=true){if(state.active&&visible&&!document.hidden&&!raf&&!ticking){last=0;raf=requestAnimationFrame(tick);}if(paint&&!ticking)draw(true);}
   function enter(){
-    if(!layer)return false;state.active=true;state.goal=null;state.progress=0;clearHeld();state.x=sites[state.selected].x;state.y=FOOT;
+    if(!layer)return false;state.active=true;state.goal=null;state.progress=0;clearHeld();state.x=sites[state.selected].x;state.y=FOOT;lastStepX=state.x;
     if(!assetsRequested){assetsRequested=true;image('visitor','assets/fishing-visitor-v11.webp');image('poses','assets/fishing-poses-v11.webp');image('beach','assets/fishing-beach-v11.webp');}
-    document.body.classList.add('fishing-active');layer.hidden=false;guide.hidden=false;document.getElementById('world').inert=true;
+    document.body.classList.add('fishing-active');layer.hidden=false;guide.hidden=false;pointNav.hidden=false;document.getElementById('world').inert=true;
     viewport.setAttribute('aria-label','프로젝트 해변: 좌우로 이동하고 이름표 어군에서 낚시');
     document.getElementById('room-description').textContent='해변을 걸으며 프로젝트를 낚아보세요. 내용은 바로 읽어도 됩니다.';
     document.getElementById('scene-label').textContent='프로젝트 해변';
@@ -262,7 +277,7 @@
   }
   function leave(){
     if(!layer)return;state.active=false;clearHeld();state.goal=null;state.phase='idle';state.progress=0;particles.length=0;rings.length=0;cancelAnimationFrame(raf);raf=0;last=0;
-    document.body.classList.remove('fishing-active');layer.hidden=true;guide.hidden=true;document.getElementById('world').inert=false;catchPanel.hidden=true;
+    document.body.classList.remove('fishing-active');layer.hidden=true;guide.hidden=true;pointNav.hidden=true;document.getElementById('world').inert=false;catchPanel.hidden=true;
     document.querySelectorAll('[data-dir]').forEach(b=>b.disabled=false);if(audio)audio.suspend().catch(()=>{});
     document.getElementById('control-help').querySelector('.keyboard-help').innerHTML='<kbd>←</kbd><kbd>→</kbd> 이동 <span id="vertical-help" hidden><kbd>↑</kbd><kbd>↓</kbd></span> · <kbd>Space</kbd> 읽기 · <kbd>Esc</kbd> 닫기';
     document.getElementById('control-help').querySelector('.touch-help').textContent='화면 안 방향 버튼으로 이동 · 상세 내용은 아래에서 읽기';
@@ -272,6 +287,8 @@
     layer=document.createElement('div');layer.id='fishing-layer';layer.hidden=true;
     layer.innerHTML='<canvas id="fishing-canvas" role="img" aria-label="모래사장과 잔잔한 바다, 낚시 복장을 입은 방문자"></canvas><div class="fish-status-chip" role="status" aria-live="polite"></div>'+sites.map((s,i)=>'<button type="button" class="fish-school" data-school="'+i+'" aria-pressed="false"><span>'+esc(s.label)+'</span><small>어군 · 포인트 선택</small></button>').join('')+'<div id="fishing-meter" hidden><span>끌어올리기</span><div role="progressbar" aria-label="물고기 끌어올리기 진행" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div></div><button id="fish-action" type="button">낚시 시작</button><section id="fish-catch-panel" aria-labelledby="fish-catch-title" hidden><p class="fish-catch-eyebrow">프로젝트를 낚았습니다</p><canvas width="120" height="76" aria-hidden="true"></canvas><h2 id="fish-catch-title"></h2><p class="fish-catch-result"></p><div><button type="button" data-catch-read>상세 읽기</button><button type="button" data-catch-close>계속 둘러보기</button></div></section><span class="sr-only" id="fish-announcement" aria-live="polite"></span>';
     viewport.append(layer);canvas=layer.querySelector('canvas');c=canvas.getContext('2d');if(!c){layer.remove();layer=null;return false;}
+    pointNav=document.createElement('nav');pointNav.className='fishing-points';pointNav.setAttribute('aria-label','프로젝트 낚시 포인트');pointNav.hidden=true;pointNav.innerHTML=['통계 조회','회원 상태','운영 도구'].map((title,i)=>'<button type="button" data-fish-point="'+i+'" aria-pressed="false"><span>0'+(i+1)+'</span>'+title+'</button>').join('');viewport.before(pointNav);pointNav.addEventListener('click',e=>{const b=e.target.closest('[data-fish-point]');if(b)select(Number(b.dataset.fishPoint));});
+    sites.forEach((site,i)=>{const b=document.createElement('button');b.type='button';b.className='fish-zone';b.dataset.schoolZone=String(i);b.setAttribute('aria-label',site.label+' 어군으로 이동');b.addEventListener('click',()=>select(i));layer.insertBefore(b,layer.querySelector('#fishing-meter'));});
     action=layer.querySelector('#fish-action');status=layer.querySelector('.fish-status-chip');meter=layer.querySelector('#fishing-meter');catchPanel=layer.querySelector('#fish-catch-panel');live=layer.querySelector('#fish-announcement');
     guide=document.createElement('div');guide.id='fishing-guide';guide.hidden=true;guide.innerHTML='<div class="fish-book-heading"><span>낚은 프로젝트</span><span class="fish-book-count">0 / 3</span></div><div class="fish-book">'+projects.map((p,i)=>'<div class="fish-book-row"><button type="button" data-fish-select="'+i+'"><strong>'+esc(p.title)+'</strong><span class="fish-book-state">아직 낚기 전</span></button><button class="fish-book-read" type="button" data-fish-read="'+i+'" aria-label="'+esc(p.title)+' 바로 읽기">읽기</button></div>').join('')+'</div><div class="fish-preferences"><label><input id="fishing-assist" type="checkbox">낚시 도움</label><button id="fishing-sound" type="button" aria-pressed="false">소리 끔</button></div><p class="fish-assist-note">도움을 켜면 늦게 챔질해도 자동으로 끌어올립니다.</p><details class="fish-related"><summary>연관 작업 · 경력 문서</summary><div><button type="button" data-related="batch">회원수 수집 자동화</button><button type="button" data-related="withdrawal">WEB 탈퇴 처리 통일</button><button type="button" data-related="screens">운영 도구 화면</button><button type="button" data-related="journey">이력서로 돌아가기</button><a href="normal.html#career">경력기술서</a><a href="normal.html#downloads">PDF 자료실</a></div></details><button class="fish-direct" type="button">선택한 프로젝트 바로 읽기</button>';
     document.getElementById('gallery-map').before(guide);
@@ -298,5 +315,5 @@
     new ResizeObserver(resize).observe(viewport);
     return true;
   }
-  window.FishingExhibition={attach,enter,leave,move,act,select,resize,clearHeld,get active(){return state.active;},get snapshot(){return {phase:state.phase,selected:state.selected,x:state.x,y:state.y,camera:state.camera,progress:state.progress,caught:[...state.caught],assist:state.assist,sound:state.sound,visible,reduced:reduced(),loaded:{...loaded},running:!!raf};}};
+  window.FishingExhibition={attach,enter,leave,move,act,select,resize,clearHeld,get active(){return state.active;},get snapshot(){return {phase:state.phase,selected:state.selected,x:state.x,y:state.y,camera:state.camera,width:W,shoalRadius:104,drawCount,progress:state.progress,caught:[...state.caught],assist:state.assist,sound:state.sound,visible,reduced:reduced(),loaded:{...loaded},running:!!raf};}};
 })();

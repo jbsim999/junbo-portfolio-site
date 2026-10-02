@@ -169,6 +169,7 @@
     window.renderVisitorSprite(visitor.querySelector('.pixel-sprite'),visitor.dataset.outfit,visitor.dataset.facing);
     visitor.dataset.x=state.x.toFixed(1);visitor.dataset.y=state.y.toFixed(1);
     window.archiveRenderer?.update(state,scale);
+    window.ArchivePerspective?.drawFallback(state,scale);
   }
   function projectEvidence(project) {
     const decisions='<details class="detail-decisions"><summary>구현에서 중요했던 판단</summary><dl>'+project.decisions.map(([subject,choice,reason])=>'<dt>'+escape(subject)+'</dt><dd><strong>'+escape(choice)+'</strong><p>'+escape(reason)+'</p></dd>').join('')+'</dl></details>';
@@ -214,7 +215,7 @@
     if(dialog.open||event.ctrlKey||event.metaKey||event.altKey||editableTarget(event.target))return;
     const direction=keyDirections[event.key];
     if(direction){
-      if(state.room==='journey'&&(direction==='up'||direction==='down'))return;
+      if((state.room==='journey'||window.FishingExhibition?.active)&&(direction==='up'||direction==='down'))return;
       event.preventDefault();
       // A quick tap still moves, even when keyup precedes the next animation frame.
       if(!keys.has(direction))move(direction==='left'?-10:direction==='right'?10:0,direction==='up'?-10:direction==='down'?10:0);
