@@ -19,7 +19,16 @@
 #perspective-floor-fallback{position:absolute;top:0;pointer-events:none}
 .game-page[data-scene=journey] .journey-path{overflow:visible}
 .game-page[data-scene=journey] .scene-bay{position:relative}
-.game-page[data-scene=journey]:not(.pixi-ready) .scene-bay:not(:last-child)::after{content:'';position:absolute;z-index:1;right:-17px;top:8px;width:34px;height:332px;background:linear-gradient(90deg,#425c6e 0 4px,#d6e9ec4d 4px 27px,#425c6e 27px 31px,#91afbd 31px);border-top:5px solid #687f8e;border-bottom:6px solid #4b6474;clip-path:polygon(0 0,100% 4%,100% 98%,0 100%);box-shadow:3px 0 7px #1c344c33}
+/* Match the renderer's 43px side trim and 410px vertical crop. Otherwise
+   fallback leaves the old painted side walls beside the new divider. */
+.game-page[data-scene=journey]:not(.pixi-ready) .scene-bay{background-size:1390.758px 1040px}
+.game-page[data-scene=journey]:not(.pixi-ready) .scene-school{background-position:-47.689px 0}
+.game-page[data-scene=journey]:not(.pixi-ready) .scene-university{background-position:-743.069px 0}
+.game-page[data-scene=journey]:not(.pixi-ready) .scene-military{background-position:-47.689px -520px}
+.game-page[data-scene=journey]:not(.pixi-ready) .scene-office{background-position:-743.069px -520px}
+.game-page[data-scene=journey]:not(.pixi-ready) .scene-lab{background-size:695.379px 520px;background-position:-47.689px 0}
+.game-page[data-scene=journey]:not(.pixi-ready) .scene-bay::before{content:'';position:absolute;inset:0;background:#14263629;pointer-events:none}
+.game-page[data-scene=journey]:not(.pixi-ready) .scene-bay:not(:last-child)::after{content:'';position:absolute;z-index:1;right:-9px;top:0;width:18px;height:340px;background:linear-gradient(#879a9f,#879a9f) top/100% 4px no-repeat,linear-gradient(#728b95 0 1px,#304b59 1px) bottom/100% 6px no-repeat,linear-gradient(90deg,#263e4b 0 2px,#506674 2px 4px,#7d9098 4px 6px,#687e87 6px 13px,#354f5e 13px 16px,#263e4b 16px);box-shadow:-3px 0 #152c3824,3px 0 #152c3824}
 .game-page .journey-divider{display:none!important}
 .game-page .scene-corner{inset:12px 14px auto;pointer-events:none;z-index:3}
 .game-page .scene-corner span{color:#d9e8f2;border-color:#8aa7b644;background:#0e1b2ae8;font-size:11px;letter-spacing:.5px}

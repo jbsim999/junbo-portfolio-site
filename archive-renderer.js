@@ -6,6 +6,7 @@
   const host=document.getElementById('render-surface');
   const viewport=document.getElementById('viewport');
   const palette={base:0x151d27,edge:0x080f18,metal:0x566576,light:0x81dce9};
+  const partitionGeometry=Object.freeze({width:18,height:340,baseY:340,capHeight:4,footHeight:6});
   const textures={},roomFrames=[];
   function rect(g,x,y,w,h,color,alpha=1){g.rect(x,y,w,h).fill({color,alpha});}
   function floor(width,height,start=0){
@@ -37,17 +38,20 @@
     for(let p=x;p<=x+length;p+=100){rect(g,p-2,y-31,4,34,0x344454);rect(g,p-1,y-30,1,30,0x95b3bf,.7);rect(g,p-4,y+2,8,3,0x101923);}
   }
   function verticalFence(g,x){
-    // Complete slim glass partitions: framed plane, capped top, two uprights,
-    // discreet fittings and a grounded foot, not a loose vertical light strip.
-    g.poly([x-15,12,x+15,25,x+15,331,x-15,340]).fill({color:0x0e2635,alpha:.22});
-    g.poly([x-11,21,x+10,31,x+10,324,x-11,331]).fill({color:0xc3dce0,alpha:.24}).stroke({color:0xdbedf0,alpha:.35,width:.6});
-    g.poly([x-7,26,x-3,29,x-3,325,x-7,327]).fill({color:0xf0faf6,alpha:.18});
-    g.poly([x-16,8,x+16,22,x+16,28,x-16,14]).fill(0x526878).stroke({color:0xadc1cb,alpha:.55,width:.7});
-    rect(g,x-16,14,4,319,0x314958);rect(g,x-15,15,1,317,0xa4bcc6,.65);
-    rect(g,x+12,28,4,305,0x304655);rect(g,x+13,29,1,301,0x91aab4,.55);
-    for(const y of [100,242]){rect(g,x+9,y,8,9,0x4d6473);rect(g,x+10,y+1,6,1,0xbed0d6,.6);}
-    g.poly([x-19,330,x+19,326,x+22,336,x-18,343]).fill({color:0x102e3c,alpha:.25});
-    g.poly([x-18,330,x+18,327,x+18,334,x-18,340]).fill(0x3e5564).stroke({color:0x9cb2bf,alpha:.5,width:.6});
+    // An edge-on matte wall, not an angled glass door. Pixel-aligned face,
+    // shallow side shading and flush skirting share the rooms' image plane.
+    const {width,height,baseY,capHeight,footHeight}=partitionGeometry;
+    const left=x-width/2,top=baseY-height;
+    rect(g,left-3,top,3,height,0x152c38,.14);
+    rect(g,left+width,top,3,height,0x152c38,.14);
+    rect(g,left,top,width,height,0x263e4b);
+    rect(g,left+2,top,width-4,height-2,0x506674);
+    rect(g,left+4,top,width-9,height-3,0x687e87);
+    rect(g,left+4,top,2,height-3,0x91a2a8,.5);
+    rect(g,left+width-5,top,3,height-2,0x354f5e);
+    rect(g,left,top,width,capHeight,0x879a9f);
+    rect(g,left,baseY-footHeight,width,footHeight,0x304b59);
+    rect(g,left,baseY-footHeight,width,1,0x728b95);
   }
   function perspectiveFloor(state,scale,width){
     const viewWidth=width/scale,bottom=Math.max(520,viewport.clientHeight/scale),key=[state.camera,viewWidth,bottom].join(':');
@@ -120,7 +124,7 @@
     const signature=[state.room,state.camera,state.cameraY,state.x,state.y,state.stop,document.getElementById('visitor').dataset.facing,width,height,scale].join(':');
     if(signature!==last){app.render();last=signature;}
   }
-  window.archiveRenderer={update,get ready(){return ready;},get partition(){return {width:36,height:332,framed:true,capped:true,grounded:true};}};
+  window.archiveRenderer={update,get ready(){return ready;},get partition(){return {...partitionGeometry};}};
   async function init(){
     if(!window.PIXI)throw new Error('Renderer unavailable');
     app=new PIXI.Application();
