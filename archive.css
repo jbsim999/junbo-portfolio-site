@@ -7,16 +7,16 @@
 .entry-page .preview-tags{flex-wrap:wrap}
 .entry-page .reading-preview strong{overflow-wrap:anywhere}
 .entry-page .reading-preview p{flex-wrap:wrap}
-.entry-page .preview-path{background:repeating-linear-gradient(0deg,transparent 0 27px,#060f1c 28px,#4c5c6d66 29px,transparent 30px),repeating-linear-gradient(90deg,#1d2835 0 97px,#101923 98px,#63738444 99px,#202c38 100px)}
+.entry-page .preview-path{background:linear-gradient(125deg,transparent 20%,#b8d2e517 46%,transparent 64%),repeating-linear-gradient(0deg,transparent 0 25px,#233d4e 26px 27px),repeating-linear-gradient(90deg,#405d70 0 52px,#233d4e 53px 54px)}
 .entry-page .preview-path .paving-tile{display:none}
-.entry-page .preview-divider{top:calc(66% - 10px);height:12px;background:#6ad8e418;border-top:2px solid #506879;border-bottom:1px solid #8bdfec;box-shadow:0 5px 12px #52cbd61c}
+.entry-page .preview-divider{display:none}
 .game-page .viewport{background:#18232e;border-color:#314b60;border-radius:12px}
 #render-surface{position:absolute;inset:0;pointer-events:none}
 #render-surface canvas{display:block;width:100%;height:100%}
 .pixi-ready .scene-backdrop,.pixi-ready .journey-path,.pixi-ready .journey-divider{visibility:hidden}
-.game-page .journey-path{background:repeating-linear-gradient(0deg,transparent 0 43px,#070f18 44px),repeating-linear-gradient(90deg,#202b36 0 166px,#080f18 167px,#1c2631 168px)}
+.game-page .journey-path{background:linear-gradient(125deg,transparent 20%,#c6dce51c 46%,transparent 64%),repeating-linear-gradient(0deg,transparent 0 40px,#233d4e 41px 42px),repeating-linear-gradient(90deg,#405d70 0 82px,#233d4e 83px 84px)}
 .game-page .journey-path .paving-tile{display:none}
-.game-page .journey-divider{top:313px;height:30px;background:#6eb0c512;border-top:3px solid #526574;border-bottom:2px solid #70d1e2}
+.game-page .journey-divider{display:none!important}
 .game-page .scene-corner{inset:12px 14px auto;pointer-events:none;z-index:3}
 .game-page .scene-corner span{color:#d9e8f2;border-color:#8aa7b644;background:#0e1b2ae8;font-size:11px;letter-spacing:.5px}
 .game-page[data-scene=journey] .exhibit{top:42px;width:340px}

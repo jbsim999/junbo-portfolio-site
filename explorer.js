@@ -35,13 +35,13 @@
   const keys = new Set(), pointers = new Map();
   const state = {room:'journey', x:stops[stops.length-1].x, y:440, stop:stops.length-1, gallery:0, near:'journey', camera:0, cameraY:0, width:stops.length*600, height:520};
   const motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
-  let returnFocus = null, lastTime = 0, frame = 0, previousLocation = '';
+  let returnFocus = null, lastTime = 0, frame = 0, previousLocation = '', fishingReady = false;
   function reveal(element) {
     if(!window.anime||document.body.classList.contains('reduce-motion'))return;
     window.anime.animate(element,{opacity:[0,1],translateY:[8,0],duration:260,ease:'out(3)'});
   }
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-  function clearInput() {keys.clear();pointers.clear();visitor.classList.remove('walking');}
+  function clearInput() {keys.clear();pointers.clear();visitor.classList.remove('walking');window.FishingExhibition?.clearHeld();}
   function applyMotion() {document.body.classList.toggle('reduce-motion', $('#reduce-motion').checked);}
   // A device-local accessibility preference only; storage can be unavailable.
   let motionPreference;
@@ -79,6 +79,7 @@
     return '<article class="exhibit gallery-exhibit '+(core?'station-project':'station-support')+'" style="left:'+tile.x+'px;top:'+(Math.floor(index/3)*520+49)+'px" data-gallery-exhibit="'+index+'"><div class="station-info">'+content+'</div></article>';
   }
   function setRoom(room, focus = true) {
+    window.FishingExhibition?.leave();
     clearInput();state.room=room;document.body.dataset.scene=room;previousLocation='';
     const journey = room === 'journey';
     state.x=journey?stops[state.stop].x:gallery[0].x;state.y=440;state.gallery=0;state.width=journey?stops.length*600:1800;state.height=journey?520:1640;
@@ -94,7 +95,9 @@
     document.querySelectorAll('[data-dir="up"],[data-dir="down"]').forEach(button => button.hidden=journey);
     document.querySelectorAll('[data-room]').forEach(button => button.setAttribute('aria-pressed',String(button.dataset.room===room)));
     $('#exhibits').innerHTML=journey?stops.map(stopMarkup).join(''):gallery.map(galleryMarkup).join('');
-    updateLocation();render();reveal(viewport);
+    if(!journey&&fishingReady){updateEra();window.FishingExhibition.enter();}
+    else {updateLocation();render();}
+    reveal(viewport);
     if(focus) viewport.focus({preventScroll:true});
   }
   function focusExhibit() {
@@ -154,6 +157,7 @@
     $('#announcement').textContent=state.near?title+'. '+action:'다음 전시로 이동 중입니다.';
   }
   function render() {
+    if(window.FishingExhibition?.active){window.FishingExhibition.resize();return;}
     // Scale the world, not the page: touch controls and reading text stay native size.
     const scale=matchMedia('(max-width:600px)').matches ? 0.8 : 1;
     const viewWidth=viewport.clientWidth/scale,viewHeight=viewport.clientHeight/scale;
@@ -192,7 +196,7 @@
     dialog.showModal();dialog.scrollTop=0;$('#close-dialog').focus({preventScroll:true});
     reveal($('#detail-content'));
   }
-  function activate() {if(!state.near||dialog.open)return;if(state.room==='gallery')galleryAction(state.gallery);else openDetail('journey');}
+  function activate() {if(dialog.open)return;if(window.FishingExhibition?.active){window.FishingExhibition.act();return;}if(!state.near)return;if(state.room==='gallery')galleryAction(state.gallery);else openDetail('journey');}
   interact.addEventListener('click',activate);
   $('#close-dialog').addEventListener('click',()=>dialog.close());
   dialog.addEventListener('keydown',event=>{
@@ -236,6 +240,7 @@
     button.addEventListener('click',event=>{if(event.detail===0){const d=button.dataset.dir;move(d==='left'?-42:d==='right'?42:0,d==='up'?-22:d==='down'?22:0);}});
   });
   function move(dx,dy) {
+    if(window.FishingExhibition?.active){window.FishingExhibition.move(dx,dy);return;}
     if(state.room==='journey'){state.x=clamp(state.x+dx,120,state.width-120);state.y=440;}
     else {
       // Only freestanding exhibit footprints block movement; no invisible rooms.
@@ -263,5 +268,9 @@
     frame=requestAnimationFrame(tick);
   }
   new ResizeObserver(render).observe(viewport);
+  try {fishingReady=Boolean(window.FishingExhibition?.attach({
+    openProject:(index,section)=>{openDetail('project',index);if(section){const target=dialog.querySelector(section);if(target){if(target.tagName==='DETAILS')target.open=true;target.scrollIntoView({block:'start'});}}},
+    journey:()=>setRoom('journey')
+  }));} catch(error) {console.warn('Fishing view unavailable; document exhibits remain accessible.',error);}
   setRoom('journey',false);frame=requestAnimationFrame(tick);
 })();

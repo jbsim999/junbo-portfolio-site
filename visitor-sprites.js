@@ -12,6 +12,7 @@
   };
   const directions = ['front','back','left','right'];
   const pivots = [152,419,700,974];
+  window.VISITOR_FRAME_DATA={frames,directions,pivots};
   window.renderVisitorSprite = (element, outfit='suit', facing='front') => {
     const direction=Math.max(0,directions.indexOf(facing));
     const key=outfit+':'+direction;

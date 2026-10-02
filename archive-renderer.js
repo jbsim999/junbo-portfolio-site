@@ -2,24 +2,29 @@
    Both layers use the same world coordinates. No WebGL is required to read. */
 (() => {
   'use strict';
-  let app, scene, room, last, pending, ready=false;
+  let app, scene, room, last, pending, reflection, footShadow, ready=false;
   const host=document.getElementById('render-surface');
   const viewport=document.getElementById('viewport');
   const palette={base:0x151d27,edge:0x080f18,metal:0x566576,light:0x81dce9};
   const textures={},roomFrames=[];
   function rect(g,x,y,w,h,color,alpha=1){g.rect(x,y,w,h).fill({color,alpha});}
   function floor(width,height,start=0){
-    const g=new PIXI.Graphics();rect(g,0,start,width,height-start,palette.edge);
-    // Offset slabs, bevels, restrained grain and flush fixings, not a luminous grid.
-    for(let row=0,y=start;y<height;y+=44,row++){
-      for(let x=(row%2?-84:0);x<width;x+=168){
-        const variation=((row*19+Math.floor(x/168)*13)%4+4)%4;
-        rect(g,x+1,y+1,166,42,[0x1c2631,0x202b36,0x1e2933,0x1d2732][variation]);
-        rect(g,x+2,y+2,164,1,0x617081,.19);rect(g,x+2,y+41,164,1,0x03090f,.55);
-        rect(g,x+3,y+4,1,34,0x82919a,.07);
-        for(let n=0;n<9;n++){const sx=x+9+(n*37+row*23)%148,sy=y+8+(n*7+row*11)%28;rect(g,sx,sy,9+(n%3)*6,.6,0x99a8ad,.035);}
-        rect(g,x+8,y+7,2,2,0x71818c,.26);rect(g,x+157,y+35,2,2,0x71818c,.2);
+    const g=new PIXI.Graphics();rect(g,0,start,width,height-start,0x233a4a);
+    // Opaque satin glass: 2:1 panels on one origin, two-pixel joints.
+    // All rooms share the same material and registration; no threshold rail.
+    for(let row=0,y=start;y<height;y+=42,row++){
+      for(let x=0;x<width;x+=84){
+        rect(g,x+.5,y+.5,83,41,0x365364);
+        for(let band=0;band<8;band++)rect(g,x+2,y+2+band*4.75,80,4.75,0x9ab4c4,.105*(1-band/9));
+        rect(g,x+1,y+1,82,.5,0xc2d4df,.16);rect(g,x+1,y+41,82,.5,0x142c3d,.2);
+        rect(g,x+1,y+2,.5,39,0xb5cdd8,.08);
+        rect(g,x+83,y+2,.5,39,0x243e50,.18);
       }
+    }
+    // Broad, soft highlights rather than neon outlines on every panel.
+    for(let x=-500;x<width;x+=600){
+      g.poly([x,start,x+200,start,x+480,height,x+240,height]).fill({color:0xd1e0e7,alpha:.025});
+      g.poly([x+70,start,x+145,start,x+350,height,x+280,height]).fill({color:0xd1e0e7,alpha:.025});
     }
     return g;
   }
@@ -45,10 +50,9 @@
       roomFrames.forEach((texture,i)=>sprite(texture,i*600,0,600,340));
       const shade=new PIXI.Graphics();rect(shade,0,0,3600,340,0x142636,.16);scene.addChild(shade);
       scene.addChild(floor(3600,520,340));
-      const light=new PIXI.Graphics();
-      for(let i=0;i<9;i++)rect(light,0,341+i*3,3600,3,palette.light,.042*(1-i/9));
-      scene.addChild(light);
-      const rails=new PIXI.Graphics();for(let x=600;x<3600;x+=600)verticalFence(rails,x);horizontalFence(rails,0,340,3600);scene.addChild(rails);
+      const rails=new PIXI.Graphics();for(let x=600;x<3600;x+=600)verticalFence(rails,x);scene.addChild(rails);
+      reflection=new PIXI.Sprite(textures.visitors);reflection.alpha=.105;reflection.tint=0xaac8d8;scene.addChild(reflection);
+      footShadow=new PIXI.Graphics();scene.addChild(footShadow);
     }else{
       scene.addChild(floor(1800,1640));
       const g=new PIXI.Graphics();
@@ -72,12 +76,24 @@
   }
   function update(state,scale){
     pending={...state,scale};if(!ready)return;
+    if(document.body.classList.contains('fishing-active'))return;
     if(room!==state.room)build(state.room);
     const width=viewport.clientWidth,height=viewport.clientHeight;
     if(app.screen.width!==width||app.screen.height!==height)app.renderer.resize(width,height);
     scene.scale.set(scale);scene.position.set(-state.camera*scale,-state.cameraY*scale);
+    if(state.room==='journey'&&reflection&&window.VISITOR_FRAME_DATA){
+      const data=window.VISITOR_FRAME_DATA,visitor=document.getElementById('visitor');
+      const direction=Math.max(0,data.directions.indexOf(visitor.dataset.facing));
+      const bounds=(data.frames[visitor.dataset.outfit]||data.frames.suit)[direction];
+      const key=visitor.dataset.outfit+':'+direction;
+      if(reflection.frameKey!==key){
+        reflection.texture=crop(textures.visitors,bounds[0],bounds[1],bounds[2]-bounds[0],bounds[3]-bounds[1]);reflection.frameKey=key;
+      }
+      const texture=reflection.texture;reflection.scale.set(64/texture.height,-26/texture.height);reflection.position.set(state.x-texture.width*64/texture.height/2,state.y+36);
+      footShadow.clear().ellipse(state.x,state.y+9,17,3).fill({color:0x193443,alpha:.18});
+    }
     // Render only on movement, navigation or resize, never an idle GPU loop.
-    const signature=[state.room,state.camera,state.cameraY,width,height,scale].join(':');
+    const signature=[state.room,state.camera,state.cameraY,state.x,state.y,state.stop,document.getElementById('visitor').dataset.facing,width,height,scale].join(':');
     if(signature!==last){app.render();last=signature;}
   }
   window.archiveRenderer={update,get ready(){return ready;}};
@@ -86,7 +102,7 @@
     app=new PIXI.Application();
     await app.init({width:viewport.clientWidth,height:viewport.clientHeight,preference:'webgl',antialias:false,resolution:Math.min(devicePixelRatio||1,2),autoDensity:true,autoStart:false,background:palette.base});
     const load=src=>new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(PIXI.Texture.from(img));img.onerror=reject;img.src=src;});
-    [textures.rooms,textures.lab]=await Promise.all([load('assets/rooms-open-v10.webp'),load('assets/lab-open-v10.webp')]);
+    [textures.rooms,textures.lab,textures.visitors]=await Promise.all([load('assets/rooms-open-v10.webp'),load('assets/lab-open-v10.webp'),load('assets/visitor-consistency-v8.webp')]);
     // Trim the old heavy side walls once, keeping original room registration.
     [[0,0],[1,0],[0,1],null,[1,1],[1,1]].forEach(cell=>roomFrames.push(cell?crop(textures.rooms,cell[0]*627+43,cell[1]*627,541,410):crop(textures.lab,86,0,1082,820)));
     host.append(app.canvas);app.canvas.setAttribute('aria-hidden','true');
