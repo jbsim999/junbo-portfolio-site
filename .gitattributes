@@ -1,0 +1,2 @@
+# Preserve PDF bytes and disable text conversion / line-ending normalization.
+*.pdf binary
