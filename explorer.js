@@ -41,7 +41,22 @@
     window.anime.animate(element,{opacity:[0,1],translateY:[8,0],duration:260,ease:'out(3)'});
   }
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-  function clearInput() {keys.clear();pointers.clear();visitor.classList.remove('walking');window.FishingExhibition?.clearHeld();}
+  function clearInput() {keys.clear();pointers.clear();lastTime=0;visitor.classList.remove('walking');window.FishingExhibition?.clearHeld();}
+  const worldScale=()=>matchMedia('(max-width:600px)').matches?0.8:1;
+  function journeyGeometry(){
+    const scale=worldScale(),box=viewport.getBoundingClientRect(),pad=viewport.querySelector('.direction-pad');
+    const padTop=pad&&!pad.hidden?pad.getBoundingClientRect().top-box.top-viewport.clientTop:viewport.clientHeight;
+    const footOffset=window.getVisitorFrameSpec?.(visitor.dataset.outfit,visitor.dataset.facing,true).data.footOffset??10;
+    // These are FOOT coordinates: artwork ends at y=340 and the registered
+    // visitor anchor is ten pixels above its feet. Controls remain native size.
+    const bounds={minX:120,maxX:state.width-120,minY:348,maxY:Math.max(348,Math.min(500,(padTop-8)/scale,(viewport.clientHeight-8)/scale))};
+    return {scale,footOffset,bounds,controlReserve:Math.max(0,viewport.clientHeight-padTop)};
+  }
+  function clampJourney(){
+    const geometry=journeyGeometry(),b=geometry.bounds;
+    state.x=clamp(state.x,b.minX,b.maxX);state.y=clamp(state.y+geometry.footOffset,b.minY,b.maxY)-geometry.footOffset;
+    return geometry;
+  }
   function applyMotion() {document.body.classList.toggle('reduce-motion', $('#reduce-motion').checked);}
   // A device-local accessibility preference only; storage can be unavailable.
   let motionPreference;
@@ -86,14 +101,15 @@
     state.x=journey?stops[state.stop].x:gallery[0].x;state.y=440;state.gallery=0;state.width=journey?stops.length*600:1800;state.height=journey?520:1640;
     world.style.width=state.width+'px';world.style.height=state.height+'px';
     $('.scene-backdrop').innerHTML=(journey?stops:gallery).map(tile=>'<div class="scene-bay scene-'+(journey?tile.scene:'station')+'"></div>').join('');
-    viewport.setAttribute('aria-label',journey?'이력서 전시: 좌우로 이동하는 관람로':'프로젝트 전시: 네 방향으로 이동하는 관람로');
+    viewport.setAttribute('aria-label',journey?'이력서 전시: 유리 타일 통로에서 상하좌우로 이동하는 관람로':'프로젝트 전시: 네 방향으로 이동하는 관람로');
     $('#scene-label').textContent=journey?'이력서 전시':'프로젝트 전시';
-    $('#room-description').textContent=journey?'좌우로 걸으며 학력과 경력을 살펴보세요.':'3×3 전시를 둘러보며 프로젝트와 관련 작업을 읽어보세요.';
+    $('#room-description').textContent=journey?'유리 타일 위에서 상하좌우로 이동하며 학력과 경력을 살펴보세요.':'3×3 전시를 둘러보며 프로젝트와 관련 작업을 읽어보세요.';
     $('#guide-title').textContent=journey?'시기별 바로가기':'전시장 안내도';
     $('#guide-count').textContent=journey?'6개 구간':'3 × 3';
     $('#guide-note').textContent=journey?'군 복무 기간은 대학 재학 기간에 포함됩니다.':'대각선에 핵심 프로젝트 3개를 배치했습니다. 나머지 구역에는 관련 작업과 경력 문서를 연결했습니다.';
-    $('#timeline-nav').hidden=!journey;$('#gallery-map').hidden=journey;$('#vertical-help').hidden=journey;
-    document.querySelectorAll('[data-dir="up"],[data-dir="down"]').forEach(button => button.hidden=journey);
+    $('#timeline-nav').hidden=!journey;$('#gallery-map').hidden=journey;$('#vertical-help').hidden=false;
+    document.querySelectorAll('[data-dir]').forEach(button => button.hidden=false);
+    $('#control-help .touch-help').textContent=journey?'방향 버튼으로 상하좌우 이동 · 유리 타일 안에서 관람 · 상세 내용은 아래에서 읽기':'방향 버튼으로 상하좌우 이동 · 상세 내용은 아래에서 읽기';
     document.querySelectorAll('[data-room]').forEach(button => button.setAttribute('aria-pressed',String(button.dataset.room===room)));
     $('#exhibits').innerHTML=journey?stops.map(stopMarkup).join(''):gallery.map(galleryMarkup).join('');
     $('#location-summary').hidden=!journey;
@@ -108,7 +124,7 @@
     // exhibit back into view instead of leaving visitors below their destination.
     const box=viewport.getBoundingClientRect();
     const stackedJourney=state.room==='journey'&&matchMedia('(max-width:1000px)').matches;
-    if((stackedJourney||matchMedia('(max-width:800px), (max-width:1100px) and (max-height:700px)').matches)&&(box.top<0||box.bottom>innerHeight))viewport.scrollIntoView({block:'start',behavior:'auto'});
+    if((stackedJourney||matchMedia('(max-width:800px), (max-width:1100px) and (max-height:700px)').matches)&&(box.top<0||box.bottom>innerHeight))viewport.scrollIntoView({block:box.height>innerHeight?'end':'start',behavior:'auto'});
   }
   function jump(index) {clearInput();state.stop=index;state.x=stops[index].x;state.y=440;updateLocation();render();focusExhibit();}
   function galleryJump(index) {clearInput();state.x=gallery[index].x;state.y=gallery[index].y;updateLocation();render();focusExhibit();}
@@ -167,7 +183,7 @@
   function render() {
     if(window.FishingExhibition?.active){window.FishingExhibition.resize();return;}
     // Scale the world, not the page: touch controls and reading text stay native size.
-    const scale=matchMedia('(max-width:600px)').matches ? 0.8 : 1;
+    const scale=state.room==='journey'?clampJourney().scale:worldScale();
     const viewWidth=viewport.clientWidth/scale,viewHeight=viewport.clientHeight/scale;
     world.style.width=Math.max(state.width,viewWidth)+'px';
     state.camera=clamp(state.x-viewWidth/2,0,Math.max(0,state.width-viewWidth));
@@ -236,39 +252,50 @@
   });
   dialog.addEventListener('click', event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}});
   const keyDirections={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down'};
-  function editableTarget(target) {return target.closest('button,a,input,textarea,select,summary,.exhibit-info,[contenteditable="true"]');}
+  function editableTarget(target) {return target instanceof Element&&target.closest('button,a,input,textarea,select,summary,.exhibit-info,[contenteditable="true"]');}
+  function inputVector(){const held=new Set([...keys,...pointers.values()]);return {x:Number(held.has('right'))-Number(held.has('left')),y:Number(held.has('down'))-Number(held.has('up'))};}
+  function nudgeHeld(){const {x,y}=inputVector(),distance=10/(x&&y?Math.SQRT2:1);move(x*distance,y*distance);}
+  const canMove=()=>!window.FishingExhibition?.active||window.FishingExhibition.snapshot.canMove;
   document.addEventListener('keydown',event=>{
-    if(dialog.open||event.ctrlKey||event.metaKey||event.altKey||editableTarget(event.target))return;
+    // ArrowUp/Down must still scroll the document when the scene is not focused.
+    if(dialog.open||document.activeElement!==viewport||event.ctrlKey||event.metaKey||event.altKey||editableTarget(event.target))return;
     const direction=keyDirections[event.key];
     if(direction){
-      if((state.room==='journey'||window.FishingExhibition?.active)&&(direction==='up'||direction==='down'))return;
       event.preventDefault();
+      if(!canMove())return;
+      // A key held across blur, resize or a cast cannot restart itself through
+      // OS repeat. A fresh physical keydown is required after cancellation.
+      if(event.repeat&&!keys.has(direction))return;
       // A quick tap still moves, even when keyup precedes the next animation frame.
-      if(!keys.has(direction))move(direction==='left'?-10:direction==='right'?10:0,direction==='up'?-10:direction==='down'?10:0);
-      keys.add(direction);
+      if(!keys.has(direction)){keys.add(direction);nudgeHeld();}
     }
     if((event.code==='Space'||event.key==='Enter')&&!event.repeat){event.preventDefault();activate();}
   });
   document.addEventListener('keyup',event=>{if(keyDirections[event.key])keys.delete(keyDirections[event.key]);});
   window.addEventListener('blur',clearInput);
+  window.addEventListener('resize',clearInput);
+  window.addEventListener('orientationchange',clearInput);
+  viewport.addEventListener('focusout',event=>{if(event.target===viewport)clearInput();});
   document.addEventListener('visibilitychange',()=>{clearInput();lastTime=0;if(document.hidden){cancelAnimationFrame(frame);frame=0;}else if(!frame)frame=requestAnimationFrame(tick);});
   document.querySelectorAll('[data-dir]').forEach(button=>{
     button.addEventListener('contextmenu',event=>event.preventDefault());
     button.addEventListener('selectstart',event=>event.preventDefault());
     button.addEventListener('pointerdown',event=>{
-      if(dialog.open)return;event.preventDefault();button.setPointerCapture(event.pointerId);
+      if(dialog.open||button.disabled||!canMove()||(event.pointerType==='mouse'&&event.button!==0))return;event.preventDefault();button.setPointerCapture(event.pointerId);
       const d=button.dataset.dir;pointers.set(event.pointerId,d);
-      move(d==='left'?-10:d==='right'?10:0,d==='up'?-10:d==='down'?10:0);
+      nudgeHeld();
       viewport.focus({preventScroll:true});
     });
     const release=event=>pointers.delete(event.pointerId);
     button.addEventListener('pointerup',release);button.addEventListener('pointercancel',release);button.addEventListener('lostpointercapture',release);
     // Keyboard and assistive-technology activation moves one discrete step.
-    button.addEventListener('click',event=>{if(event.detail===0){const d=button.dataset.dir;move(d==='left'?-42:d==='right'?42:0,d==='up'?-22:d==='down'?22:0);}});
+    button.addEventListener('click',event=>{if(event.detail===0&&!dialog.open&&canMove()){const d=button.dataset.dir;clearInput();move(d==='left'?-42:d==='right'?42:0,d==='up'?-42:d==='down'?42:0);}});
   });
   function move(dx,dy) {
-    if(window.FishingExhibition?.active){window.FishingExhibition.move(dx,dy);return;}
-    if(state.room==='journey'){state.x=clamp(state.x+dx,120,state.width-120);state.y=440;}
+    if(!Number.isFinite(dx)||!Number.isFinite(dy))return false;
+    if(window.FishingExhibition?.active)return window.FishingExhibition.move(dx,dy);
+    const previousX=state.x,previousY=state.y;
+    if(state.room==='journey'){state.x+=dx;state.y+=dy;clampJourney();}
     else {
       // Only freestanding exhibit footprints block movement; no invisible rooms.
       const walkable=(x,y)=>!gallery.some((tile,index)=>{const top=Math.floor(index/3)*520;return x>tile.x-180&&x<tile.x+180&&y>top+40&&y<top+360;});
@@ -283,21 +310,22 @@
       visitor.querySelector('.pixel-sprite').classList.add('registered-visitor');
     }
     updateLocation();render();
+    return state.x!==previousX||state.y!==previousY;
   }
   function tick(time) {
     frame=0;const dt=lastTime?Math.min((time-lastTime)/1000,.04):0;lastTime=time;
-    const held=new Set([...keys,...pointers.values()]);
-    const dx=Number(held.has('right'))-Number(held.has('left'));
-    const dy=state.room==='journey'?0:Number(held.has('down'))-Number(held.has('up'));
-    const walking=Boolean((dx||dy)&&!dialog.open);
-    visitor.classList.toggle('walking',walking);
-    if(walking){const scale=240*dt/(dx&&dy?Math.SQRT2:1);move(dx*scale,dy*scale);}
+    const {x:dx,y:dy}=inputVector();
+    const walking=Boolean((dx||dy)&&!dialog.open&&canMove());
+    let displaced=false;
+    if(walking){const distance=240*dt/(dx&&dy?Math.SQRT2:1);displaced=move(dx*distance,dy*distance);}
+    visitor.classList.toggle('walking',displaced);
     frame=requestAnimationFrame(tick);
   }
   new ResizeObserver(render).observe(viewport);
   try {fishingReady=Boolean(window.FishingExhibition?.attach({
     openProject:(index,section,origin)=>{openDetail('project',index,origin);if(section){const target=dialog.querySelector(section);if(target){if(target.tagName==='DETAILS')target.open=true;target.scrollIntoView({block:'start'});}}},
-    journey:()=>setRoom('journey')
+    journey:()=>setRoom('journey'),clearMovement:clearInput
   }));} catch(error) {console.warn('Fishing view unavailable; document exhibits remain accessible.',error);}
+  window.JourneyMovement={get snapshot(){const g=journeyGeometry();return {active:state.room==='journey',x:state.x,y:state.y,foot:{x:state.x,y:state.y+g.footOffset},footOffset:g.footOffset,bounds:{...g.bounds},scale:g.scale,controlReserve:g.controlReserve,camera:state.camera,cameraY:state.cameraY,stop:state.stop,facing:visitor.dataset.facing,walking:visitor.classList.contains('walking'),held:[...new Set([...keys,...pointers.values()])]};}};
   setRoom('journey',false);frame=requestAnimationFrame(tick);
 })();

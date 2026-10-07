@@ -9,10 +9,10 @@
 <link rel="stylesheet" href="batch.css">
 <link rel="stylesheet" href="brand.css">
 <link rel="stylesheet" href="exhibition-theme.css?v=15">
-<link rel="stylesheet" href="archive.css?v=16">
-<link rel="stylesheet" href="fishing.css?v=14">
+<link rel="stylesheet" href="archive.css?v=17">
+<link rel="stylesheet" href="fishing.css?v=17">
 <script src="vendor/pixi-8.21.0.min.js" defer></script><script src="vendor/anime-4.5.0.min.js" defer></script>
-<script src="content.js" defer></script><script src="projects.js" defer></script><script src="batch-view.js" defer></script><script src="assets/visitor-journey-v14.js" defer></script><script src="visitor-sprites.js?v=14" defer></script><script src="paving.js" defer></script><script src="floor-perspective.js?v=12" defer></script><script src="archive-renderer.js?v=16" defer></script><script src="fishing.js?v=14" defer></script><script src="explorer.js?v=15" defer></script>
+<script src="content.js" defer></script><script src="projects.js" defer></script><script src="batch-view.js" defer></script><script src="assets/visitor-journey-v14.js" defer></script><script src="visitor-sprites.js?v=14" defer></script><script src="paving.js" defer></script><script src="floor-perspective.js?v=12" defer></script><script src="archive-renderer.js?v=17" defer></script><script src="fishing.js?v=17" defer></script><script src="explorer.js?v=17" defer></script>
 </head>
 <body class="game-page">
 <a class="skip-link" href="#game-main">탐험 화면으로 이동</a>
@@ -20,7 +20,7 @@
 <main id="game-main" class="game-shell">
 <div class="game-heading"><div><p class="overline">JUNBO SIM / BACKEND DEVELOPER</p><h1>심준보의 전시관</h1></div><a class="quiet-link" href="pdf/resume.pdf" download="심준보_이력서.pdf">이력서 PDF 다운로드</a></div>
 <nav class="room-tabs" aria-label="탐험 구역"><button type="button" data-room="journey" aria-pressed="true">01 이력서</button><button type="button" data-room="gallery" aria-pressed="false">02 프로젝트</button><a href="normal.html#career">경력기술서 전체</a></nav>
-<div class="room-toolbar"><p id="room-description">좌우로 걸으며 학력과 경력을 살펴보세요.</p><label class="motion-control"><input id="reduce-motion" type="checkbox">동작 줄이기</label></div>
+<div class="room-toolbar"><p id="room-description">유리 타일 위에서 상하좌우로 이동하며 학력과 경력을 살펴보세요.</p><label class="motion-control"><input id="reduce-motion" type="checkbox">동작 줄이기</label></div>
 <p id="art-status" class="art-status" role="status" hidden></p>
 <div class="exhibition-layout"><div class="exhibition-stage">
 <section id="viewport" class="viewport" tabindex="0" role="region" aria-label="성장 여정 이동 공간" aria-describedby="control-help">
@@ -33,9 +33,9 @@
 <div id="visitor" class="actor visitor" data-facing="front" data-outfit="suit" aria-hidden="true"><span class="pixel-sprite visitor-front"></span><span class="soccer-ball"></span><span class="actor-name">방문자</span></div>
 </div>
 <div class="scene-corner" aria-hidden="true"><span id="scene-label">이력서 전시</span><span id="scene-position">06 / 06</span></div>
-<div class="direction-pad" role="group" aria-label="캐릭터 이동"><button type="button" data-dir="up" aria-label="위로 이동" hidden></button><button type="button" data-dir="left" aria-label="왼쪽으로 이동"></button><button type="button" data-dir="down" aria-label="아래로 이동" hidden></button><button type="button" data-dir="right" aria-label="오른쪽으로 이동"></button></div>
+<div class="direction-pad" role="group" aria-label="캐릭터 상하좌우 이동"><button type="button" data-dir="up" aria-label="위로 이동"></button><button type="button" data-dir="left" aria-label="왼쪽으로 이동"></button><button type="button" data-dir="down" aria-label="아래로 이동"></button><button type="button" data-dir="right" aria-label="오른쪽으로 이동"></button></div>
 </section>
-<div class="control-bar"><p id="control-help"><span class="keyboard-help"><kbd>←</kbd><kbd>→</kbd> 이동 <span id="vertical-help" hidden><kbd>↑</kbd><kbd>↓</kbd></span> · <kbd>Space</kbd> 읽기 · <kbd>Esc</kbd> 닫기</span><span class="touch-help">화면 안 방향 버튼으로 이동 · 상세 내용은 아래에서 읽기</span></p></div>
+<div class="control-bar"><p id="control-help"><span class="keyboard-help"><kbd>←</kbd><kbd>→</kbd><span id="vertical-help"><kbd>↑</kbd><kbd>↓</kbd></span> 유리 타일 안에서 이동 · <kbd>Space</kbd> 읽기 · <kbd>Esc</kbd> 닫기</span><span class="touch-help">방향 버튼으로 상하좌우 이동 · 유리 타일 안에서 관람 · 상세 내용은 아래에서 읽기</span></p></div>
 </div><aside class="exhibition-guide" aria-label="현재 위치와 바로가기">
 <div class="interaction-strip"><div class="location-copy"><span class="overline" id="location-label">현재 위치</span><strong id="location-title"></strong><span id="location-subtitle"></span><p id="location-summary" class="location-summary" hidden></p></div><button id="interact" class="action-button" type="button" aria-describedby="location-title">이력 읽기 <kbd>Space</kbd></button></div>
 <div class="guide-heading"><h2 id="guide-title">시기별 바로가기</h2><span id="guide-count">6개 구간</span></div>

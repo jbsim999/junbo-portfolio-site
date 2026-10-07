@@ -11,7 +11,8 @@
 .entry-page .preview-path canvas{display:block;width:100%;height:100%}
 .entry-page .preview-path .paving-tile{display:none}
 .entry-page .preview-divider{display:none}
-.game-page .viewport{background:#18232e;border-color:#314b60;border-radius:12px}
+.game-page .viewport{--movement-button-size:48px;--movement-pad-width:152px;--movement-pad-height:100px;--movement-controls-inset:12px;background:#18232e;border-color:#314b60;border-radius:12px}
+.game-page[data-scene=journey] .viewport{height:600px}
 #render-surface{position:absolute;inset:0;pointer-events:none}
 #render-surface canvas{display:block;width:100%;height:100%}
 .pixi-ready .scene-backdrop,.pixi-ready .journey-path,.pixi-ready .journey-divider{visibility:hidden}
@@ -74,17 +75,19 @@
 .game-page .station-info button{margin-top:auto;align-self:flex-start;min-height:38px;padding:7px 12px;border:1px solid #87b3c455;background:#244559;color:#e0f3f8;border-radius:5px;font-size:13px}
 .game-page .gallery-exhibit.current .station-info button{background:#93ddeb;color:#112a37;border-color:#93ddeb}
 .station-support .station-info h2{font-size:21px}
-.game-page .direction-pad{position:absolute;inset:auto 16px 14px;z-index:5;display:flex;justify-content:space-between;pointer-events:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-.game-page .direction-pad button{pointer-events:auto;width:48px;height:46px;min-width:44px;border:1px solid #99bfce66;background:#102234ed;color:#d9eef7;border-radius:9px;box-shadow:0 3px 12px #0003;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;display:grid;place-items:center}
+/* A compact, native-size T-pad reserves two rows rather than three. Rendering
+   and movement read its actual bounds; it is never scaled with the world. */
+.game-page .viewport .direction-pad{position:absolute;inset:auto auto var(--movement-controls-inset) var(--movement-controls-inset);z-index:5;display:grid;grid-template-columns:repeat(3,var(--movement-button-size));grid-template-rows:repeat(2,var(--movement-button-size));gap:4px;width:var(--movement-pad-width);height:var(--movement-pad-height);padding:0;background:none;border-radius:0;justify-content:start;pointer-events:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.game-page .viewport .direction-pad button{pointer-events:auto;width:var(--movement-button-size);height:var(--movement-button-size);min-width:44px;min-height:44px;margin:0;padding:0;order:0;border:1px solid #99bfce66;background:#102234ed;color:#d9eef7;border-radius:9px;box-shadow:0 3px 12px #0003;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;display:grid;place-items:center}
+.game-page .viewport .direction-pad [data-dir=up]{grid-column:2;grid-row:1}
+.game-page .viewport .direction-pad [data-dir=left]{grid-column:1;grid-row:2}
+.game-page .viewport .direction-pad [data-dir=down]{grid-column:2;grid-row:2}
+.game-page .viewport .direction-pad [data-dir=right]{grid-column:3;grid-row:2}
 .direction-pad button::before{content:'';width:10px;height:10px;border-top:2px solid currentColor;border-right:2px solid currentColor;transform:rotate(45deg)}
 .direction-pad [data-dir=left]::before{transform:rotate(-135deg)}
 .direction-pad [data-dir=up]::before{transform:rotate(-45deg)}
 .direction-pad [data-dir=down]::before{transform:rotate(135deg)}
 .game-page .direction-pad button:hover,.game-page .direction-pad button:active{background:#244b60;color:#c0f1f5;border-color:#a3e8ee}
-.game-page[data-scene=gallery] .direction-pad{inset:auto 14px 12px auto;display:grid;grid-template-columns:repeat(4,46px);grid-template-rows:44px;gap:5px;padding:5px;border-radius:12px;background:#08132166}
-.game-page[data-scene=gallery] .direction-pad [data-dir]{grid-column:auto;grid-row:1}
-.game-page[data-scene=gallery] .direction-pad [data-dir=left]{order:-1}
-.game-page[data-scene=gallery] .direction-pad button{width:46px;height:44px}
 .game-page .control-bar{min-height:42px;padding:10px 2px 0}
 .game-page .control-bar p{font-size:12px;line-height:1.6}
 .game-page .exhibition-guide{border-radius:12px}
@@ -95,7 +98,8 @@
  .entry-page .reading-preview{min-height:220px}
  .entry-page .mode-card{grid-template-rows:auto minmax(220px,1fr) auto}
  .entry-page .studio-preview{min-height:220px}
- .game-page .viewport{height:460px;border-radius:10px}
+ .game-page .viewport{--movement-button-size:44px;--movement-pad-width:140px;--movement-pad-height:92px;height:460px;border-radius:10px}
+ .game-page[data-scene=journey] .viewport{height:500px}
  .game-page[data-scene=journey] .exhibit{top:42px;width:326px}
  .game-page[data-scene=journey] .exhibit-info{min-height:158px;padding:12px 18px}
  .game-page[data-scene=journey] .exhibit-info h2{font-size:20px}
@@ -108,10 +112,12 @@
  .game-page .station-result{font-size:16px}
  .game-page .station-summary{font-size:14px}
  .game-page .station-info button{font-size:15px;min-height:42px}
- .game-page .direction-pad{inset:auto 14px 14px}
  .game-page .touch-help{max-width:none;font-size:12px}
 }
 @media(prefers-reduced-motion:reduce){.game-page .world{will-change:auto}}
+@media(max-width:1100px) and (max-height:500px){
+ .game-page .viewport{--movement-button-size:44px;--movement-pad-width:140px;--movement-pad-height:92px}
+}
 
 /* Match the actual room depth: the exhibit figure is behind the visitor. */
 .entry-page .preview-npc{width:58px;height:58px;left:calc(50% - 29px);top:auto;bottom:calc(34% + 12px)}
