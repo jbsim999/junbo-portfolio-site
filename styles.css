@@ -1,4 +1,49 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap');
+/* Application profile: preserve the established palette and natural photo ratio. */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+.hero-note .focus-title{font-size:clamp(1.45rem,2.2vw,1.85rem);line-height:1.6;letter-spacing:-.7px;margin:24px 0 18px}
+.focus-list{list-style:none;padding:0;margin:0 0 24px}
+.focus-list li{padding:13px 0;border-top:1px solid #3c485e}
+.focus-list strong,.focus-list span{display:block}
+.focus-list strong{font-size:14px;font-weight:600;color:#fff}
+.focus-list span{font-size:12px;color:#c6d5ef;margin-top:4px}
+body .metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:0}
+body .metrics strong{display:flex;align-items:baseline;flex-wrap:wrap;gap:0 8px;line-height:1.5}
+body .metrics .metric-text{font-size:30px;letter-spacing:-1px}
+/* Card count follows readable text width, including enlarged text. */
+body .download-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,18em),1fr))}
+body .resume-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,19em),1fr))}
+.profile-identity{display:grid;grid-template-columns:112px minmax(0,1fr);gap:24px;align-items:center;margin-bottom:24px}
+.profile-identity>*{min-width:0}
+.profile-photo{display:block;width:112px;max-width:100%;height:auto;border:1px solid var(--line);border-radius:5px;background:var(--pale)}
+.profile-identity .eyebrow{font-size:10px;letter-spacing:1.5px;margin:0 0 7px}
+.profile-name{font-size:28px;letter-spacing:-1px;margin:0;line-height:1.5}
+.profile-role{font-size:14px;color:var(--muted);margin:7px 0 0}
+.profile-overview .resume-headline{font-size:19px;font-weight:600;line-height:1.7;margin:0 0 12px}
+.profile-overview .profile-summary{font-size:16px;line-height:1.9;margin:0 0 20px}
+.profile-contacts{display:flex;flex-wrap:wrap;gap:8px 24px;margin-top:20px;font-style:normal}
+.profile-contacts a{display:inline-flex;align-items:baseline;gap:8px;flex-wrap:wrap;min-width:0;max-width:100%;padding:4px 0}
+.profile-contacts a>span:first-child{font-size:12px;font-weight:500;color:var(--muted)}
+.learning-projects{margin:20px 0 35px;padding:28px 0 0;border-top:1px solid var(--line)}
+.learning-projects>h3{font-size:20px;letter-spacing:-.5px;margin:0 0 20px}
+.learning-project{padding:24px 28px;border:1px solid var(--line);border-radius:6px}
+.learning-project+.learning-project{margin-top:20px}
+.learning-heading{display:flex;align-items:start;justify-content:space-between;gap:18px 30px;flex-wrap:wrap}
+.learning-heading>*{min-width:0}
+.learning-heading h4{font-size:20px;margin:4px 0 0;line-height:1.5}
+.learning-heading .period{margin:0;font-size:12px}
+.learning-heading .tags{max-width:100%;margin-top:3px}
+.learning-category{color:var(--blue);font-weight:600}
+.learning-project>p,.learning-project ul{font-size:14px;color:#465570}
+.learning-project ul{padding-left:20px;margin-bottom:0}
+.learning-project li+li{margin-top:8px}
+.learning-project .learning-note{font-size:12px;color:var(--muted);margin:20px 0 0;padding-top:14px;border-top:1px solid var(--line)}
+.table-wrap:focus-visible,pre:focus-visible{outline:3px solid #5189ff;outline-offset:4px}
+.explore-link{text-align:center;padding:24px}
+/* Give long skill descriptions a full line on narrow phones. */
+@media(max-width:480px){body .skill-row{grid-template-columns:minmax(0,1fr);gap:5px}body .skill-row span{line-height:1.85}}
+@media(max-width:900px){body .metrics .metric-text{font-size:25px}.profile-identity{gap:18px}.profile-name{font-size:26px}}
+@media(max-width:650px){body .metrics{grid-template-columns:minmax(0,1fr);padding:4px 0}body .metrics>div{padding:18px 0;border-right:0;border-bottom:1px solid var(--line)}body .metrics>div:last-child{border-bottom:0}body .metrics p{font-size:13px}body .metrics .metric-text{font-size:26px}.profile-identity{grid-template-columns:88px minmax(0,1fr);gap:18px}.profile-photo{width:88px}.profile-identity .eyebrow{font-size:9px;letter-spacing:1px}.profile-name{font-size:25px}.profile-role{font-size:13px}.profile-contacts{display:grid;grid-template-columns:minmax(0,1fr);gap:4px}.learning-projects{padding-top:24px}.learning-project{padding:20px}.learning-heading{gap:15px}}
 /* Reflow follows the text's actual size, including browser text enlargement.
    Keep long Korean words breakable only when a whole word cannot fit. */
 body{overflow-wrap:anywhere}

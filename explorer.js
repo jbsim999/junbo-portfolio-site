@@ -14,14 +14,14 @@
     {title:'춘천고등학교', short:'고등학교', period:'2010.03 - 2013.02', scenic:true, scene:'school', sprite:'schoolboy'},
     {title:education.title, short:'대학 시절', period:education.period, subtitle:education.description, items:[education.description], scene:'university', sprite:'student'},
     {title:'육군', short:'군 복무', period:'2014.08 - 2016.03', subtitle:'취사병 · 만기전역', scenic:true, scene:'military', sprite:'soldier-cook'},
-    {title:earlierWork.company, short:'오뗄 · 비개발 경력', period:earlierWork.period, subtitle:'실험 업무 · 데이터 비교 자동화', items:[earlierWork.description], scene:'lab', sprite:'lab-scientist'},
+    {title:earlierWork.company, short:'오뗄 · 이전 직무', period:earlierWork.period, subtitle:'품질관리·실험 업무 · 데이터 비교 자동화', items:[earlierWork.description], scene:'lab', sprite:'lab-scientist'},
     {title:firstJob.company, short:'첫 백엔드 경력', period:firstJob.period, subtitle:'IoT 통신 서버와 웹 서비스 개발', items:firstJob.items, scene:'office', sprite:'developer-early'},
     {title:currentJob.company, short:'현재 경력', period:currentJob.period, subtitle:'책이음 서비스 운영·개선', items:currentJob.items, scene:'office', sprite:'developer-coffee'}
   ].map((stop,index)=>({...stop,x:index*600+300}));
   const projects = profile.projects;
   const gallery = [
     {label:'통계 성능 개선',project:0,description:'집계 구조 · 인덱스 · 쿼리 튜닝',visual:'성능'},
-    {label:'회원수 수집 자동화',project:0,section:'.batch-work',description:'200개 이상 지역 · 20개 단위 병렬 수집',visual:'병렬 수집'},
+    {label:'회원수 수집 자동화',project:0,section:'.batch-work',description:'200개 이상 지역 · 그룹 내 병렬 수집',visual:'병렬 수집'},
     {label:'PDF 자료실',description:'이력서·포트폴리오·경력기술서',href:'normal.html#downloads',visual:'문서'},
     {label:'이력서 전시',description:'학력과 회사별 경력',return:true},
     {label:'회원 상태 보정',project:1,visual:'데이터'},
@@ -201,6 +201,12 @@
     const screens=project.screens?'<details class="detail-screens"><summary>화면과 기능의 변화</summary><p class="code-caption">'+escape(project.screens.caption)+'</p>'+project.screens.items.map(screen=>'<figure><img src="'+escape(screen.src)+'" alt="'+escape(screen.title)+'. 가상 데이터로 재구성한 설명용 화면." loading="lazy"><figcaption><strong>'+escape(screen.title)+'</strong><p>'+escape(screen.description)+'</p></figcaption></figure>').join('')+'</details>':'';
     return decisions+related+screens;
   }
+  function learningDetail() {
+    const education=Array.isArray(profile.resume.education)?profile.resume.education.slice(1):[];
+    const learning=Array.isArray(profile.resume.learningProjects)?profile.resume.learningProjects.filter(project=>project&&project.title):[];
+    if(!education.length&&!learning.length)return '';
+    return '<section class="detail-learning" aria-labelledby="detail-learning-title"><h3 id="detail-learning-title">졸업 후 개발 교육</h3>'+education.map(course=>'<p><strong>'+escape(course.title)+'</strong><br><span class="period">'+escape(course.period)+'</span><br>'+escape(course.description)+'</p>').join('')+learning.map(project=>'<article><h3>'+escape(project.category||'교육 팀 프로젝트')+' · '+escape(project.title)+'</h3><p class="period">'+escape(project.period)+'</p><p>'+escape(project.description)+'</p>'+(Array.isArray(project.tags)?'<div class="detail-meta">'+project.tags.map(tag=>'<span>'+escape(tag)+'</span>').join('')+'</div>':'')+(Array.isArray(project.items)?list(project.items):'')+(project.note?'<p class="code-caption">'+escape(project.note)+'</p>':'')+'</article>').join('')+'</section>';
+  }
   function openDetail(kind,index=state.stop,origin=document.activeElement) {
     if(dialog.open)return;
     clearInput();returnFocus=origin;
@@ -214,9 +220,9 @@
         projectEvidence(project)+'<div class="detail-links"><a href="normal.html#case-'+(index+1)+'">문서형 포트폴리오에서 보기</a><a href="pdf/portfolio.pdf" download="심준보_포트폴리오.pdf">포트폴리오 PDF</a></div>';
     } else {
       const stop=stops[index];
-      const items=stop.items||[];
-      html='<p class="period">'+escape(stop.period)+'</p><h2 id="detail-title">'+escape(stop.title)+'</h2>'+(stop.subtitle?'<p>'+escape(stop.subtitle)+'</p>':'')+(items.length?list(items):'')+
-        '<div class="detail-links"><a href="normal.html#resume">전체 이력서</a><a href="pdf/resume.pdf" download="심준보_이력서.pdf">이력서 PDF</a></div>';
+      const items=(stop.items||[]).filter(item=>item!==stop.subtitle);
+      html='<p class="period">'+escape(stop.period)+'</p><h2 id="detail-title">'+escape(stop.title)+'</h2>'+(stop.subtitle?'<p>'+escape(stop.subtitle)+'</p>':'')+(items.length?list(items):'')+(index===1?learningDetail():'')+
+        '<div class="detail-links"><a href="normal.html#resume">전체 이력서</a>'+(Array.isArray(profile.resume.learningProjects)&&profile.resume.learningProjects.length?'<a href="normal.html#learning-title">교육 팀 프로젝트</a>':'')+'<a href="pdf/resume.pdf" download="심준보_이력서.pdf">이력서 PDF</a></div>';
     }
     $('#detail-content').innerHTML=html;
     dialog.showModal();dialog.scrollTop=0;$('#close-dialog').focus({preventScroll:true});
