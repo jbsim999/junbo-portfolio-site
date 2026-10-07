@@ -16,10 +16,11 @@
   const settingKey='junbo-fishing-v1';
   const state={active:false,selected:0,x:180,y:FOOT,camera:0,phase:'idle',elapsed:0,clock:0,goal:null,progress:0,hold:false,walking:false,facing:1,frame:0,caught:new Set(),assist:true,sound:false};
   try{const saved=JSON.parse(localStorage.getItem(settingKey)||'null');if(saved&&typeof saved==='object'){state.caught=new Set((Array.isArray(saved.caught)?saved.caught:[]).filter(id=>sites.some(s=>s.id===id)));if(typeof saved.assist==='boolean')state.assist=saved.assist;if(typeof saved.sound==='boolean')state.sound=saved.sound;}}catch{}
-  let api,viewport,layer,guide,canvas,c,action,status,meter,catchPanel,live,pointNav,scale=1,visible=true,raf=0,last=0,lastDraw=0,bookSignature='',movingUntil=0,reelSoundAt=0,drawCount=0;
+  let api,viewport,layer,guide,guidance,canvas,c,action,status,meter,catchPanel,live,pointNav,scale=1,sceneTop=0,controlHeight=48,visible=true,raf=0,last=0,lastDraw=0,bookSignature='',movingUntil=0,reelSoundAt=0,drawCount=0;
   const assets={},fishArt=[],particles=[],rings=[],sprite={size:160,foot:148};
   const loaded={beach:false,poses:false,visitor:false};
   let audio=null,master=null,ticking=false,assetsRequested=false,lastStepX=state.x;
+  let actionPointer=null,reelKeyPress=null,suppressPointerClick=false;
   const allowedMovement=()=>['idle','walk','caught'].includes(state.phase);
   function save(){try{localStorage.setItem(settingKey,JSON.stringify({caught:[...state.caught],assist:state.assist,sound:state.sound}));}catch{}}
   function image(key,src){const img=new Image();assets[key]=img;img.onload=()=>{loaded[key]=true;draw(true);};img.onerror=()=>{loaded[key]=false;layer.dataset.artFallback='true';draw(true);};img.src=src;}
@@ -60,9 +61,10 @@
     else{state.goal=null;state.x=sites[index].x;phase('idle');}
     focusScene();
   }
-  function focusScene(){viewport.focus({preventScroll:true});if(matchMedia('(max-width:800px)').matches){const r=viewport.getBoundingClientRect();if(r.top<0||r.bottom>innerHeight)viewport.scrollIntoView({block:'start',behavior:'auto'});}}
+  function focusScene(){viewport.focus({preventScroll:true});if(matchMedia('(max-width:800px), (max-width:1100px) and (max-height:700px)').matches){const r=viewport.getBoundingClientRect();if(r.top<0||r.bottom>innerHeight)viewport.scrollIntoView({block:'start',behavior:'auto'});}}
   function read(index=state.selected,section){
-    state.selected=index;state.goal=null;clearHeld();particles.length=0;rings.length=0;catchPanel.hidden=true;phase('idle');api.openProject(index,section);
+    const origin=catchPanel.contains(document.activeElement)?viewport:document.activeElement;
+    state.selected=index;state.goal=null;clearHeld();particles.length=0;rings.length=0;catchPanel.hidden=true;phase('idle');api.openProject(index,section,origin);
   }
   function act(){
     if(!state.active||document.getElementById('detail-dialog').open||state.phase==='walk')return;
@@ -88,6 +90,7 @@
     if([viewport,action,document.getElementById('interact')].includes(document.activeElement))catchPanel.querySelector('[data-catch-read]').focus({preventScroll:true});
   }
   function clearHeld(){state.hold=false;state.walking=false;movingUntil=0;}
+  function cancelActionPress(){if(actionPointer)actionPointer.cancelled=true;if(reelKeyPress)reelKeyPress.cancelled=true;clearHeld();}
   function move(dx,dy=0){
     if(!state.active||!allowedMovement())return;
     if(state.phase==='caught'){catchPanel.hidden=true;phase('idle');}
@@ -126,11 +129,34 @@
     pointNav.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.fishPoint)===state.selected)));
   }
   function geometry(){
-    scale=Math.min(1,viewport.clientHeight/H);
+    const height=canvas.clientHeight,compact=height<430;
+    // Reserve the bottom strip for native-size touch controls. Shrinking only
+    // the canvas put the visitor under the cast button on short mobile screens.
+    const reserve=layer.dataset.largeText==='true'?Math.max(82,controlHeight+36):82;
+    scale=Math.min(1,height/H,compact||layer.dataset.largeText==='true'?(height-reserve)/FOOT:1);
+    sites.forEach(site=>site.y=compact?270:222);
+    layer.dataset.compact=String(compact);
     const visibleWidth=viewport.clientWidth/scale;
     return {visibleWidth,camera:visibleWidth>=W?(W-visibleWidth)/2:clamp(state.x-visibleWidth/2,0,W-visibleWidth)};
   }
-  function resize(){if(!canvas)return;const d=Math.min(devicePixelRatio||1,1.75);const width=Math.max(1,viewport.clientWidth),height=Math.max(1,viewport.clientHeight);if(canvas.width!==Math.round(width*d)||canvas.height!==Math.round(height*d)){canvas.width=Math.round(width*d);canvas.height=Math.round(height*d);}state.camera=geometry().camera;draw(true);}
+  function resize(){if(!canvas||!state.active)return;const d=Math.min(devicePixelRatio||1,1.75);const width=Math.max(1,canvas.clientWidth),height=Math.max(1,canvas.clientHeight);if(canvas.width!==Math.round(width*d)||canvas.height!==Math.round(height*d)){canvas.width=Math.round(width*d);canvas.height=Math.round(height*d);}state.camera=geometry().camera;draw(true);}
+  function layoutGuidance(){
+    if(!layer||!state.active)return;
+    const previousTop=sceneTop,previousControlHeight=controlHeight,previouslyEnlarged=layer.dataset.largeText==='true';
+    const enlarged=parseFloat(getComputedStyle(status).fontSize)>16||parseFloat(getComputedStyle(layer.querySelector('.fish-school')).fontSize)>18;
+    layer.dataset.largeText=String(enlarged);viewport.classList.toggle('fishing-large-text',enlarged);
+    // Show all choices before measuring the flowing grid. A name formerly
+    // outside the camera must not remain hidden in the enlarged-text layout.
+    if(enlarged)layer.querySelectorAll('[data-school]').forEach(button=>{button.hidden=false;button.inert=false;});
+    sceneTop=enlarged?Math.ceil(guidance.getBoundingClientRect().height):0;
+    viewport.style.setProperty('--fish-guidance-height',sceneTop+'px');
+    controlHeight=action.offsetHeight;
+    viewport.style.setProperty('--fish-controls-height',controlHeight+'px');
+    const density=Math.min(devicePixelRatio||1,1.75),sizeChanged=canvas.width!==Math.round(canvas.clientWidth*density)||canvas.height!==Math.round(canvas.clientHeight*density);
+    // A name becoming visible during a walk also triggers ResizeObserver. Do
+    // not snap the following camera just to refresh the label's text position.
+    if(previousTop!==sceneTop||previousControlHeight!==controlHeight||previouslyEnlarged!==enlarged||sizeChanged)resize();else draw(true);
+  }
   function heroPose(){
     if(state.walking||state.phase==='walk')return Math.floor(state.clock*5)%2+1;
     if(state.phase==='windup')return 3;
@@ -191,7 +217,7 @@
   function draw(force=false){
     if(!c||!state.active||document.hidden||!visible&&!force)return;
     geometry();
-    const width=viewport.clientWidth,height=viewport.clientHeight,d=canvas.width/Math.max(1,width);
+    const width=canvas.clientWidth,height=canvas.clientHeight,d=canvas.width/Math.max(1,width);
     c.setTransform(d,0,0,d,0,0);c.clearRect(0,0,width,height);c.save();c.scale(scale,scale);
     const shake=reduced()?0:state.phase==='hook'?Math.sin(state.elapsed*55)*1.6*(1-clamp(state.elapsed/.22,0,1)):0;
     c.translate(-state.camera+shake,0);
@@ -213,11 +239,12 @@
     const sunlight=c.createLinearGradient(state.camera,0,state.camera+width/scale,H);sunlight.addColorStop(0,'#fff4c514');sunlight.addColorStop(1,'#24547608');c.fillStyle=sunlight;c.fillRect(state.camera,0,width/scale,H);c.restore();
     const pad=9;
     layer.querySelectorAll('[data-school]').forEach(b=>{const index=Number(b.dataset.school),site=sites[index],x=(site.x-state.camera)*scale;
+      if(layer.dataset.largeText==='true'){b.hidden=false;b.inert=false;b.style.left='';b.style.top='';return;}
       const half=Math.min(width-24,width<=600?170:190)/2;
       const onScreen=x>pad+half&&x<width-pad-half;b.hidden=!onScreen;b.inert=!onScreen;
-      if(onScreen){b.style.left=x+'px';b.style.top=Math.max((site.y-90)*scale,12+status.offsetHeight+14+b.offsetHeight/2)+'px';}
+      if(onScreen){b.style.left=x+'px';b.style.top=Math.max((site.y-(layer.dataset.compact==='true'?120:90))*scale,12+status.offsetHeight+14+b.offsetHeight/2)+'px';}
     });
-    layer.querySelectorAll('[data-school-zone]').forEach(b=>{const site=sites[Number(b.dataset.schoolZone)],x=(site.x-state.camera)*scale,w=218*scale;b.hidden=x<w/2+8||x>width-w/2-8;b.inert=b.hidden;b.style.left=x+'px';b.style.top=(site.y+4)*scale+'px';b.style.width=w+'px';b.style.height=112*scale+'px';});
+    layer.querySelectorAll('[data-school-zone]').forEach(b=>{const site=sites[Number(b.dataset.schoolZone)],x=(site.x-state.camera)*scale,w=218*scale;b.hidden=x<w/2+8||x>width-w/2-8;b.inert=b.hidden;b.style.left=x+'px';b.style.top=(sceneTop+(site.y+4)*scale)+'px';b.style.width=w+'px';b.style.height=112*scale+'px';});
     layer.dataset.camera=state.camera.toFixed(2);layer.dataset.x=state.x.toFixed(2);layer.dataset.spriteFrame=String(heroPose());layer.dataset.drawCount=String(++drawCount);
   }
   function step(dt){
@@ -265,7 +292,7 @@
     if(!assetsRequested){assetsRequested=true;image('visitor','assets/fishing-visitor-v11.webp');image('poses','assets/fishing-poses-v11.webp');image('beach','assets/fishing-beach-v11.webp');}
     document.body.classList.add('fishing-active');layer.hidden=false;guide.hidden=false;pointNav.hidden=false;document.getElementById('world').inert=true;
     viewport.setAttribute('aria-label','프로젝트 해변: 좌우로 이동하고 이름표 어군에서 낚시');
-    document.getElementById('room-description').textContent='해변을 걸으며 프로젝트를 낚아보세요. 내용은 바로 읽어도 됩니다.';
+    document.getElementById('room-description').textContent='어군을 골라 낚거나 바로 읽어보세요.';
     document.getElementById('scene-label').textContent='프로젝트 해변';
     document.getElementById('guide-title').textContent='프로젝트 도감';document.getElementById('guide-count').textContent='3개 프로젝트';
     document.getElementById('gallery-map').hidden=true;document.getElementById('guide-note').textContent='낚은 프로젝트는 이 기기에 기록됩니다. 낚시 여부와 관계없이 모든 내용을 읽을 수 있습니다.';
@@ -273,10 +300,10 @@
     document.getElementById('vertical-help').hidden=true;
     document.getElementById('control-help').querySelector('.keyboard-help').innerHTML='<kbd>←</kbd><kbd>→</kbd> 이동 · <kbd>Space</kbd> 낚시 · <kbd>Esc</kbd> 취소';
     document.getElementById('control-help').querySelector('.touch-help').textContent='방향 버튼으로 이동 · 낚시 버튼을 눌러 캐스팅과 챔질';
-    catchPanel.hidden=true;phase('idle');resize();wake();return true;
+    catchPanel.hidden=true;phase('idle');layoutGuidance();wake();return true;
   }
   function leave(){
-    if(!layer)return;state.active=false;clearHeld();state.goal=null;state.phase='idle';state.progress=0;particles.length=0;rings.length=0;cancelAnimationFrame(raf);raf=0;last=0;
+    if(!layer)return;state.active=false;cancelActionPress();state.goal=null;state.phase='idle';state.progress=0;particles.length=0;rings.length=0;cancelAnimationFrame(raf);raf=0;last=0;
     document.body.classList.remove('fishing-active');layer.hidden=true;guide.hidden=true;pointNav.hidden=true;document.getElementById('world').inert=false;catchPanel.hidden=true;
     document.querySelectorAll('[data-dir]').forEach(b=>b.disabled=false);if(audio)audio.suspend().catch(()=>{});
     document.getElementById('control-help').querySelector('.keyboard-help').innerHTML='<kbd>←</kbd><kbd>→</kbd> 이동 <span id="vertical-help" hidden><kbd>↑</kbd><kbd>↓</kbd></span> · <kbd>Space</kbd> 읽기 · <kbd>Esc</kbd> 닫기';
@@ -290,6 +317,9 @@
     pointNav=document.createElement('nav');pointNav.className='fishing-points';pointNav.setAttribute('aria-label','프로젝트 낚시 포인트');pointNav.hidden=true;pointNav.innerHTML=['통계 조회','회원 상태','운영 도구'].map((title,i)=>'<button type="button" data-fish-point="'+i+'" aria-pressed="false"><span>0'+(i+1)+'</span>'+title+'</button>').join('');viewport.before(pointNav);pointNav.addEventListener('click',e=>{const b=e.target.closest('[data-fish-point]');if(b)select(Number(b.dataset.fishPoint));});
     sites.forEach((site,i)=>{const b=document.createElement('button');b.type='button';b.className='fish-zone';b.dataset.schoolZone=String(i);b.setAttribute('aria-label',site.label+' 어군으로 이동');b.addEventListener('click',()=>select(i));layer.insertBefore(b,layer.querySelector('#fishing-meter'));});
     action=layer.querySelector('#fish-action');status=layer.querySelector('.fish-status-chip');meter=layer.querySelector('#fishing-meter');catchPanel=layer.querySelector('#fish-catch-panel');live=layer.querySelector('#fish-announcement');
+    guidance=document.createElement('div');guidance.className='fish-guidance';
+    const schoolGroup=document.createElement('div');schoolGroup.className='fish-school-group';
+    guidance.append(status,schoolGroup);layer.querySelectorAll('[data-school]').forEach(button=>schoolGroup.append(button));canvas.after(guidance);
     guide=document.createElement('div');guide.id='fishing-guide';guide.hidden=true;guide.innerHTML='<div class="fish-book-heading"><span>낚은 프로젝트</span><span class="fish-book-count">0 / 3</span></div><div class="fish-book">'+projects.map((p,i)=>'<div class="fish-book-row"><button type="button" data-fish-select="'+i+'"><strong>'+esc(p.title)+'</strong><span class="fish-book-state">아직 낚기 전</span></button><button class="fish-book-read" type="button" data-fish-read="'+i+'" aria-label="'+esc(p.title)+' 바로 읽기">읽기</button></div>').join('')+'</div><div class="fish-preferences"><label><input id="fishing-assist" type="checkbox">낚시 도움</label><button id="fishing-sound" type="button" aria-pressed="false">소리 끔</button></div><p class="fish-assist-note">도움을 켜면 늦게 챔질해도 자동으로 끌어올립니다.</p><details class="fish-related"><summary>연관 작업 · 경력 문서</summary><div><button type="button" data-related="batch">회원수 수집 자동화</button><button type="button" data-related="withdrawal">WEB 탈퇴 처리 통일</button><button type="button" data-related="screens">운영 도구 화면</button><button type="button" data-related="journey">이력서로 돌아가기</button><a href="normal.html#career">경력기술서</a><a href="normal.html#downloads">PDF 자료실</a></div></details><button class="fish-direct" type="button">선택한 프로젝트 바로 읽기</button>';
     document.getElementById('gallery-map').before(guide);
     sites.forEach(s=>fishArt.push(makeFish(s.color)));
@@ -300,20 +330,52 @@
     guide.querySelectorAll('[data-related]').forEach(b=>b.addEventListener('click',()=>{const name=b.dataset.related;if(name==='journey')api.journey();else read(name==='batch'?0:name==='withdrawal'?1:2,name==='batch'?'.batch-work':name==='withdrawal'?'.detail-related':'.detail-screens');}));
     const assist=guide.querySelector('#fishing-assist');assist.checked=state.assist;assist.addEventListener('change',()=>{state.assist=assist.checked;save();refresh();wake();});
     const sound=guide.querySelector('#fishing-sound');sound.setAttribute('aria-pressed',String(state.sound));sound.textContent=state.sound?'소리 켬':'소리 끔';sound.addEventListener('click',()=>{state.sound=!state.sound;sound.setAttribute('aria-pressed',String(state.sound));sound.textContent=state.sound?'소리 켬':'소리 끔';if(state.sound){audioReady();tone(523);}else if(audio)audio.suspend().catch(()=>{});save();});
-    action.addEventListener('click',act);action.addEventListener('pointerdown',e=>{if(state.phase==='reel'){e.preventDefault();state.hold=true;action.setPointerCapture(e.pointerId);audioReady();}});
-    const release=()=>state.hold=false;for(const type of ['pointerup','pointercancel','lostpointercapture'])action.addEventListener(type,release);
+    action.addEventListener('click',e=>{
+      // pointerup/lostpointercapture precede click. The click still belongs to
+      // the gesture that began reeling, even when the catch card is now open.
+      if(e.detail>0&&suppressPointerClick){suppressPointerClick=false;e.preventDefault();return;}
+      act();
+    });
+    action.addEventListener('pointerdown',e=>{
+      suppressPointerClick=false;actionPointer={id:e.pointerId,phase:state.phase,cancelled:false};
+      if(state.phase==='reel'){e.preventDefault();state.hold=true;action.setPointerCapture(e.pointerId);audioReady();}
+    });
+    action.addEventListener('pointerup',e=>{
+      state.hold=false;
+      if(actionPointer?.id===e.pointerId){suppressPointerClick=actionPointer.cancelled||actionPointer.phase!==state.phase;actionPointer=null;}
+    });
+    const cancelPointer=e=>{state.hold=false;if(actionPointer?.id===e.pointerId){actionPointer=null;suppressPointerClick=true;}};
+    action.addEventListener('pointercancel',cancelPointer);action.addEventListener('lostpointercapture',cancelPointer);
     action.addEventListener('contextmenu',e=>e.preventDefault());action.addEventListener('selectstart',e=>e.preventDefault());
-    action.addEventListener('keydown',e=>{if((e.code==='Space'||e.key==='Enter')&&state.phase==='reel'){e.preventDefault();state.hold=true;}});action.addEventListener('keyup',e=>{if(e.code==='Space'||e.key==='Enter')state.hold=false;});
+    const actionKey=e=>e.code==='Space'?'Space':e.key==='Enter'?'Enter':null;
+    action.addEventListener('keydown',e=>{
+      const key=actionKey(e);if(!key)return;
+      if(!e.repeat)suppressPointerClick=false;
+      if(state.phase==='reel'&&!reelKeyPress){e.preventDefault();reelKeyPress={key,cancelled:false};state.hold=true;audioReady();if(!e.repeat)act();}
+    });
+    // Catching moves focus to its Read button. Keep ownership of a held key
+    // until keyup so key-repeat or Space's release cannot activate that button.
+    document.addEventListener('keydown',e=>{
+      if(!reelKeyPress||actionKey(e)!==reelKeyPress.key)return;
+      if(reelKeyPress.cancelled&&!e.repeat){reelKeyPress=null;return;}
+      e.preventDefault();e.stopPropagation();
+    },true);
+    document.addEventListener('keyup',e=>{
+      if(!reelKeyPress||actionKey(e)!==reelKeyPress.key)return;
+      e.preventDefault();e.stopPropagation();state.hold=false;reelKeyPress=null;
+    },true);
     catchPanel.querySelector('[data-catch-read]').addEventListener('click',()=>read());catchPanel.querySelector('[data-catch-close]').addEventListener('click',()=>{catchPanel.hidden=true;phase('idle');focusScene();});
-    document.addEventListener('keydown',e=>{if(!state.active||document.getElementById('detail-dialog').open)return;if(e.key==='Escape'){state.goal=null;catchPanel.hidden=true;clearHeld();phase('idle');}if(e.code==='Space'&&state.phase==='reel'&&e.target===viewport){e.preventDefault();state.hold=true;}});
+    document.addEventListener('keydown',e=>{if(!state.active||document.getElementById('detail-dialog').open)return;if(e.key==='Escape'){const catchFocused=catchPanel.contains(document.activeElement);state.goal=null;catchPanel.hidden=true;clearHeld();phase('idle');if(catchFocused)focusScene();}if(e.code==='Space'&&state.phase==='reel'&&e.target===viewport){e.preventDefault();state.hold=true;}});
     document.addEventListener('keyup',e=>{if(e.code==='Space')state.hold=false;});
-    window.addEventListener('blur',clearHeld);
-    document.addEventListener('visibilitychange',()=>{clearHeld();if(document.hidden){cancelAnimationFrame(raf);raf=0;last=0;if(audio)audio.suspend().catch(()=>{});}else wake();});
+    window.addEventListener('blur',cancelActionPress);
+    document.addEventListener('visibilitychange',()=>{cancelActionPress();if(document.hidden){cancelAnimationFrame(raf);raf=0;last=0;if(audio)audio.suspend().catch(()=>{});}else wake();});
     document.getElementById('detail-dialog').addEventListener('close',()=>{clearHeld();wake();});
     document.getElementById('reduce-motion').addEventListener('change',()=>{particles.length=0;rings.length=0;wake();});
     new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;if(visible)wake();else{cancelAnimationFrame(raf);raf=0;last=0;clearHeld();}},{threshold:.08}).observe(viewport);
     new ResizeObserver(resize).observe(viewport);
+    const textLayoutObserver=new ResizeObserver(layoutGuidance);
+    [guidance,status,action,...layer.querySelectorAll('.fish-school,.fish-school span,.fish-school small')].forEach(element=>textLayoutObserver.observe(element));
     return true;
   }
-  window.FishingExhibition={attach,enter,leave,move,act,select,resize,clearHeld,get active(){return state.active;},get snapshot(){return {phase:state.phase,selected:state.selected,x:state.x,y:state.y,camera:state.camera,width:W,shoalRadius:104,drawCount,progress:state.progress,caught:[...state.caught],assist:state.assist,sound:state.sound,visible,reduced:reduced(),loaded:{...loaded},running:!!raf};}};
+  window.FishingExhibition={attach,enter,leave,move,act,select,resize,clearHeld,get active(){return state.active;},get snapshot(){return {phase:state.phase,selected:state.selected,x:state.x,y:state.y,camera:state.camera,scale,sceneTop,sceneHeight:canvas?.clientHeight||0,width:W,shoalY:sites[state.selected].y,shoalRadius:104,drawCount,progress:state.progress,caught:[...state.caught],assist:state.assist,sound:state.sound,visible,reduced:reduced(),loaded:{...loaded},running:!!raf};}};
 })();

@@ -12,23 +12,47 @@
   };
   const directions = ['front','back','left','right'];
   const pivots = [152,419,700,974];
-  window.VISITOR_FRAME_DATA={frames,directions,pivots};
+  const legacy={frames,directions,pivots,source:'assets/visitor-consistency-v8.webp',width:1122,height:1402,visibleHeight:64,footOffset:10};
+  window.VISITOR_FRAME_DATA=legacy;
+  // Entry and fishing keep their approved art. Only the linear career journey
+  // uses the taller, common-proportion visitor atlas and its measured pivots.
+  window.getVisitorFrameSpec=(outfit='suit',facing='front',journey=false)=>{
+    const data=journey&&window.JOURNEY_VISITOR_FRAME_DATA||legacy;
+    const direction=Math.max(0,data.directions.indexOf(facing));
+    const safeOutfit=data.frames[outfit]?outfit:'suit';
+    const bounds=data.frames[safeOutfit][direction];
+    const pivot=Array.isArray(data.pivots)?data.pivots[direction]:data.pivots[safeOutfit][direction];
+    return {data,bounds,pivot,direction,outfit:safeOutfit,key:data.source+':'+safeOutfit+':'+direction};
+  };
   window.renderVisitorSprite = (element, outfit='suit', facing='front') => {
-    const direction=Math.max(0,directions.indexOf(facing));
-    const key=outfit+':'+direction;
+    const journey=document.body.dataset.scene==='journey'&&Boolean(element.closest('#visitor'));
+    const {data,bounds,pivot,key}=window.getVisitorFrameSpec(outfit,facing,journey);
     if(element.dataset.frame===key)return;
-    const [left,top,right,bottom]=(frames[outfit]||frames.suit)[direction];
-    const scale=64/(bottom-top), padding=2;
+    const [left,top,right,bottom]=bounds;
+    const scale=data.visibleHeight/(bottom-top), padding=2;
     const frame=document.createElement('span');
     frame.className='visitor-frame';
     frame.style.width=(right-left+padding*2)*scale+'px';
     frame.style.height=(bottom-top+padding*2)*scale+'px';
-    frame.style.left='calc(50% + '+((left-padding-pivots[direction])*scale)+'px)';
+    frame.style.left='calc(50% + '+((left-padding-pivot)*scale)+'px)';
     frame.style.bottom=-padding*scale+'px';
-    frame.style.backgroundSize=(1122*scale)+'px '+(1402*scale)+'px';
+    frame.style.backgroundSize=(data.width*scale)+'px '+(data.height*scale)+'px';
     frame.style.backgroundPosition=(-(left-padding)*scale)+'px '+(-(top-padding)*scale)+'px';
+    if(journey)frame.style.backgroundImage='url("'+data.source+'")';
     element.replaceChildren(frame);
+    if(journey){
+      // The fallback mirrors the same registered feet used by the WebGL layer.
+      const reflection=frame.cloneNode();
+      reflection.className='visitor-frame visitor-reflection';
+      reflection.setAttribute('aria-hidden','true');
+      reflection.style.bottom=-(data.visibleHeight*.3+padding*scale*.3)+'px';
+      reflection.style.height=(data.visibleHeight+padding*scale*2)*.3+'px';
+      reflection.style.backgroundSize=(data.width*scale)+'px '+(data.height*scale*.3)+'px';
+      reflection.style.backgroundPosition=(-(left-padding)*scale)+'px '+(-(top-padding)*scale*.3)+'px';
+      element.prepend(reflection);
+    }
     element.classList.add('registered-visitor');
     element.dataset.frame=key;
+    element.dataset.visitorArt=journey?'journey-v14':'legacy-v8';
   };
 })();

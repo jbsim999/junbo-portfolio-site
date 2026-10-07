@@ -7,7 +7,8 @@
 .entry-page .preview-tags{flex-wrap:wrap}
 .entry-page .reading-preview strong{overflow-wrap:anywhere}
 .entry-page .reading-preview p{flex-wrap:wrap}
-.entry-page .preview-path{background:linear-gradient(125deg,transparent 20%,#b8d2e517 46%,transparent 64%),repeating-linear-gradient(0deg,transparent 0 25px,#233d4e 26px 27px),repeating-linear-gradient(90deg,#405d70 0 52px,#233d4e 53px 54px)}
+.entry-page .preview-path{background:linear-gradient(155deg,#526f82,#345568)}
+.entry-page .preview-path canvas{display:block;width:100%;height:100%}
 .entry-page .preview-path .paving-tile{display:none}
 .entry-page .preview-divider{display:none}
 .game-page .viewport{background:#18232e;border-color:#314b60;border-radius:12px}
@@ -19,25 +20,42 @@
 #perspective-floor-fallback{position:absolute;top:0;pointer-events:none}
 .game-page[data-scene=journey] .journey-path{overflow:visible}
 .game-page[data-scene=journey] .scene-bay{position:relative}
-/* Match the renderer's 43px side trim and 410px vertical crop. Otherwise
-   fallback leaves the old painted side walls beside the new divider. */
-.game-page[data-scene=journey]:not(.pixi-ready) .scene-bay{background-size:1390.758px 1040px}
-.game-page[data-scene=journey]:not(.pixi-ready) .scene-school{background-position:-47.689px 0}
-.game-page[data-scene=journey]:not(.pixi-ready) .scene-university{background-position:-743.069px 0}
-.game-page[data-scene=journey]:not(.pixi-ready) .scene-military{background-position:-47.689px -520px}
-.game-page[data-scene=journey]:not(.pixi-ready) .scene-office{background-position:-743.069px -520px}
-.game-page[data-scene=journey]:not(.pixi-ready) .scene-lab{background-size:695.379px 520px;background-position:-47.689px 0}
+/* Keep a CSS divider inside its room layer. The foreground visitor can overlap
+   the room edge with a hat/head and must never be painted behind that divider. */
+.game-page[data-scene=journey] .scene-backdrop{z-index:0}
+.game-page[data-scene=journey] .visitor{z-index:2}
+/* The art is registered to 1200 x 680, exactly 2x the 600 x 340 world bay.
+   CSS and Pixi therefore preserve the same furniture proportions and crop. */
+.game-page[data-scene=journey] .scene-bay{background-size:600px 340px;background-position:0 0}
+.game-page[data-scene=journey] .scene-school{background-image:url('assets/room-school-v14.webp')}
+.game-page[data-scene=journey] .scene-university{background-image:url('assets/room-university-v14.webp')}
+.game-page[data-scene=journey] .scene-military{background-image:url('assets/room-military-v14.webp')}
+.game-page[data-scene=journey] .scene-office{background-image:url('assets/room-office-v14.webp')}
+.game-page[data-scene=journey] .scene-lab{background-image:url('assets/room-lab-v14.webp')}
 .game-page[data-scene=journey]:not(.pixi-ready) .scene-bay::before{content:'';position:absolute;inset:0;background:#14263629;pointer-events:none}
-.game-page[data-scene=journey]:not(.pixi-ready) .scene-bay:not(:last-child)::after{content:'';position:absolute;z-index:1;right:-9px;top:0;width:18px;height:340px;background:linear-gradient(#879a9f,#879a9f) top/100% 4px no-repeat,linear-gradient(#728b95 0 1px,#304b59 1px) bottom/100% 6px no-repeat,linear-gradient(90deg,#263e4b 0 2px,#506674 2px 4px,#7d9098 4px 6px,#687e87 6px 13px,#354f5e 13px 16px,#263e4b 16px);box-shadow:-3px 0 #152c3824,3px 0 #152c3824}
+/* Approved E, identical to the four Pixi rectangles: 2px + 1px translucent
+   joint, then a 6 x 7px floor contact with a 1px highlight. No upright post. */
+.game-page[data-scene=journey]:not(.pixi-ready) .scene-bay:not(:last-child)::after{content:'';position:absolute;z-index:1;right:-3px;top:0;width:6px;height:340px;background:linear-gradient(rgb(209 219 214 / .48),rgb(209 219 214 / .48)) 0 333px/6px 1px no-repeat,linear-gradient(rgb(140 165 175 / .55),rgb(140 165 175 / .55)) 0 333px/6px 7px no-repeat,linear-gradient(rgb(177 192 190 / .5),rgb(177 192 190 / .5)) 2px 0/2px 340px no-repeat,linear-gradient(rgb(110 138 148 / .28),rgb(110 138 148 / .28)) 4px 0/1px 340px no-repeat;box-shadow:none}
 .game-page .journey-divider{display:none!important}
 .game-page .scene-corner{inset:12px 14px auto;pointer-events:none;z-index:3}
 .game-page .scene-corner span{color:#d9e8f2;border-color:#8aa7b644;background:#0e1b2ae8;font-size:11px;letter-spacing:.5px}
 .game-page[data-scene=journey] .exhibit{top:42px;width:340px}
-.game-page[data-scene=journey] .exhibit-info{min-height:158px;padding:16px 20px;background:#fffffff2;border:1px solid #d9e6ed;border-radius:8px;box-shadow:0 10px 24px #08132326}
+.game-page[data-scene=journey] .exhibit-info{min-height:158px;max-height:188px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:16px 20px;background:#fffffff2;border:1px solid #d9e6ed;border-radius:8px;box-shadow:0 10px 24px #08132326}
 .game-page[data-scene=journey] .exhibit-info h2{font-size:18px;line-height:1.5}
 .game-page[data-scene=journey] .exhibit-info p{font-size:14px;line-height:1.6;margin-bottom:8px}
 .game-page[data-scene=journey] .exhibit-info .overline{font-size:12px;letter-spacing:.2px}
-.game-page[data-scene=journey] .npc-display{top:166px}
+/* Feet, not transparent cell bounds, define the shared room-floor contact.
+   Exhibit top 42 + height 310 - bottom 42 = world y 310. Stage alpha padding
+   is compensated inside the box; the preserved identity atlas stays intact. */
+.game-page[data-scene=journey] .npc-display{top:auto;bottom:42px;width:128px;height:128px;isolation:isolate}
+.game-page[data-scene=journey] .npc-display::before{content:'';position:absolute;left:50%;bottom:-2px;width:36px;height:6px;transform:translateX(-50%);border-radius:50%;background:#172a3329;z-index:-1}
+.game-page[data-scene=journey] .npc-display .pixel-sprite{width:128px;height:128px;transform:translateY(var(--npc-foot-inset,6.25px))}
+.game-page[data-scene=journey] .npc-display .schoolboy,.game-page[data-scene=journey] .npc-display .soldier-cook{--npc-foot-inset:3px}
+.game-page[data-scene=journey] .npc-display .student{--npc-foot-inset:2.5px}
+.visitor-reflection{display:none;pointer-events:none}
+.game-page[data-scene=journey]:not(.pixi-ready) .visitor-reflection{display:block;transform:scaleY(-1);opacity:.09;filter:saturate(.45)}
+.game-page[data-scene=journey]:not(.pixi-ready) .visitor::before{content:'';position:absolute;left:50%;top:77px;width:42px;height:7px;transform:translateX(-50%);border-radius:50%;background:#1934432e}
+.game-page[data-scene=journey] .scenic-exhibit .exhibit-info{min-height:0;padding:12px 20px}
 .game-page .visitor.walking{animation:none}
 .game-page .actor-name{background:#0c192be8;color:#e2eff7;border:1px solid #7997ac66;font-size:11px;padding:1px 7px}
 .game-page .visitor .actor-name{display:none}
@@ -83,7 +101,7 @@
  .game-page[data-scene=journey] .exhibit-info h2{font-size:20px}
  .game-page[data-scene=journey] .exhibit-info p{font-size:15px}
  .game-page[data-scene=journey] .exhibit-info .overline{font-size:13px}
- .game-page[data-scene=journey] .npc-display{top:166px}
+ .game-page[data-scene=journey] .npc-display{top:auto}
  .game-page .gallery-exhibit{width:330px}
  .game-page .gallery-exhibit .station-info{padding:20px;height:286px}
  .game-page .station-info h2{font-size:24px}
@@ -94,3 +112,13 @@
  .game-page .touch-help{max-width:none;font-size:12px}
 }
 @media(prefers-reduced-motion:reduce){.game-page .world{will-change:auto}}
+
+/* Match the actual room depth: the exhibit figure is behind the visitor. */
+.entry-page .preview-npc{width:58px;height:58px;left:calc(50% - 29px);top:auto;bottom:calc(34% + 12px)}
+
+/* Let navigation reflow with its font size instead of squeezing dates into
+   three fixed columns when the user enlarges text. */
+.timeline-nav button,.timeline-nav button span{min-width:0;overflow-wrap:anywhere}
+@media(max-width:800px){
+ .game-page .timeline-nav{grid-template-columns:repeat(auto-fit,minmax(min(100%,max(8.5em,calc((100% - 16px)/3))),1fr))}
+}

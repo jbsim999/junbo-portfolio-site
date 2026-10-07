@@ -8,11 +8,11 @@
 <link rel="stylesheet" href="explorer.css">
 <link rel="stylesheet" href="batch.css">
 <link rel="stylesheet" href="brand.css">
-<link rel="stylesheet" href="exhibition-theme.css">
-<link rel="stylesheet" href="archive.css?v=13">
-<link rel="stylesheet" href="fishing.css?v=12">
+<link rel="stylesheet" href="exhibition-theme.css?v=15">
+<link rel="stylesheet" href="archive.css?v=16">
+<link rel="stylesheet" href="fishing.css?v=14">
 <script src="vendor/pixi-8.21.0.min.js" defer></script><script src="vendor/anime-4.5.0.min.js" defer></script>
-<script src="content.js" defer></script><script src="projects.js" defer></script><script src="batch-view.js" defer></script><script src="visitor-sprites.js" defer></script><script src="paving.js" defer></script><script src="floor-perspective.js?v=12" defer></script><script src="archive-renderer.js?v=13" defer></script><script src="fishing.js?v=12" defer></script><script src="explorer.js?v=12" defer></script>
+<script src="content.js" defer></script><script src="projects.js" defer></script><script src="batch-view.js" defer></script><script src="assets/visitor-journey-v14.js" defer></script><script src="visitor-sprites.js?v=14" defer></script><script src="paving.js" defer></script><script src="floor-perspective.js?v=12" defer></script><script src="archive-renderer.js?v=16" defer></script><script src="fishing.js?v=14" defer></script><script src="explorer.js?v=15" defer></script>
 </head>
 <body class="game-page">
 <a class="skip-link" href="#game-main">탐험 화면으로 이동</a>
@@ -37,7 +37,7 @@
 </section>
 <div class="control-bar"><p id="control-help"><span class="keyboard-help"><kbd>←</kbd><kbd>→</kbd> 이동 <span id="vertical-help" hidden><kbd>↑</kbd><kbd>↓</kbd></span> · <kbd>Space</kbd> 읽기 · <kbd>Esc</kbd> 닫기</span><span class="touch-help">화면 안 방향 버튼으로 이동 · 상세 내용은 아래에서 읽기</span></p></div>
 </div><aside class="exhibition-guide" aria-label="현재 위치와 바로가기">
-<div class="interaction-strip"><div class="location-copy"><span class="overline" id="location-label">현재 위치</span><strong id="location-title"></strong><span id="location-subtitle"></span></div><button id="interact" class="action-button" type="button">이력 읽기 <kbd>Space</kbd></button></div>
+<div class="interaction-strip"><div class="location-copy"><span class="overline" id="location-label">현재 위치</span><strong id="location-title"></strong><span id="location-subtitle"></span><p id="location-summary" class="location-summary" hidden></p></div><button id="interact" class="action-button" type="button" aria-describedby="location-title">이력 읽기 <kbd>Space</kbd></button></div>
 <div class="guide-heading"><h2 id="guide-title">시기별 바로가기</h2><span id="guide-count">6개 구간</span></div>
 <nav id="timeline-nav" class="timeline-nav" aria-label="시기로 바로 이동"></nav>
 <nav id="gallery-map" class="gallery-map" aria-label="3행 3열 전시장 안내도" hidden><div class="gallery-map-heading"><h2>전시장 안내도</h2><p>구역을 누르면 바로 이동합니다.</p></div><div id="gallery-map-grid" class="gallery-map-grid"></div></nav>

@@ -6,7 +6,7 @@
   const host=document.getElementById('render-surface');
   const viewport=document.getElementById('viewport');
   const palette={base:0x151d27,edge:0x080f18,metal:0x566576,light:0x81dce9};
-  const partitionGeometry=Object.freeze({width:18,height:340,baseY:340,capHeight:4,footHeight:6});
+  const partitionGeometry=Object.freeze({variant:'e',width:6,height:340,baseY:340,capHeight:0,footHeight:7,seamWidth:3,footWidth:6});
   const textures={},roomFrames=[];
   function rect(g,x,y,w,h,color,alpha=1){g.rect(x,y,w,h).fill({color,alpha});}
   function floor(width,height,start=0){
@@ -38,20 +38,12 @@
     for(let p=x;p<=x+length;p+=100){rect(g,p-2,y-31,4,34,0x344454);rect(g,p-1,y-30,1,30,0x95b3bf,.7);rect(g,p-4,y+2,8,3,0x101923);}
   }
   function verticalFence(g,x){
-    // An edge-on matte wall, not an angled glass door. Pixel-aligned face,
-    // shallow side shading and flush skirting share the rooms' image plane.
-    const {width,height,baseY,capHeight,footHeight}=partitionGeometry;
-    const left=x-width/2,top=baseY-height;
-    rect(g,left-3,top,3,height,0x152c38,.14);
-    rect(g,left+width,top,3,height,0x152c38,.14);
-    rect(g,left,top,width,height,0x263e4b);
-    rect(g,left+2,top,width-4,height-2,0x506674);
-    rect(g,left+4,top,width-9,height-3,0x687e87);
-    rect(g,left+4,top,2,height-3,0x91a2a8,.5);
-    rect(g,left+width-5,top,3,height-2,0x354f5e);
-    rect(g,left,top,width,capHeight,0x879a9f);
-    rect(g,left,baseY-footHeight,width,footHeight,0x304b59);
-    rect(g,left,baseY-footHeight,width,1,0x728b95);
+    // Approved E: no freestanding object or dark gap. Adjacent room textures
+    // meet directly; a low-contrast joint ends flush at their shared floor edge.
+    rect(g,x-1,0,2,340,0xb1c0be,.5);
+    rect(g,x+1,0,1,340,0x6e8a94,.28);
+    rect(g,x-3,333,6,7,0x8ca5af,.55);
+    rect(g,x-3,333,6,1,0xd1dbd6,.48);
   }
   function perspectiveFloor(state,scale,width){
     const viewWidth=width/scale,bottom=Math.max(520,viewport.clientHeight/scale),key=[state.camera,viewWidth,bottom].join(':');
@@ -78,7 +70,7 @@
       const shade=new PIXI.Graphics();rect(shade,0,0,3600,340,0x142636,.16);scene.addChild(shade);
       floorMesh=new PIXI.Graphics();floorKey='';scene.addChild(floorMesh);
       const rails=new PIXI.Graphics();for(let x=600;x<3600;x+=600)verticalFence(rails,x);scene.addChild(rails);
-      reflection=new PIXI.Sprite(textures.visitors);reflection.alpha=.105;reflection.tint=0xaac8d8;scene.addChild(reflection);
+      reflection=new PIXI.Sprite(textures.visitors);reflection.alpha=.09;reflection.tint=0xaac8d8;scene.addChild(reflection);
       footShadow=new PIXI.Graphics();scene.addChild(footShadow);
     }else{
       scene.addChild(floor(1800,1640));
@@ -108,35 +100,73 @@
     const width=viewport.clientWidth,height=viewport.clientHeight;
     if(app.screen.width!==width||app.screen.height!==height)app.renderer.resize(width,height);
     scene.scale.set(scale);scene.position.set(-state.camera*scale,-state.cameraY*scale);
-    if(state.room==='journey'&&reflection&&window.VISITOR_FRAME_DATA){
+    if(state.room==='journey'&&reflection&&window.getVisitorFrameSpec){
       perspectiveFloor(state,scale,width);
-      const data=window.VISITOR_FRAME_DATA,visitor=document.getElementById('visitor');
-      const direction=Math.max(0,data.directions.indexOf(visitor.dataset.facing));
-      const bounds=(data.frames[visitor.dataset.outfit]||data.frames.suit)[direction];
-      const key=visitor.dataset.outfit+':'+direction;
+      const visitor=document.getElementById('visitor');
+      const {data,bounds,pivot,key}=window.getVisitorFrameSpec(visitor.dataset.outfit,visitor.dataset.facing,true);
       if(reflection.frameKey!==key){
         reflection.texture=crop(textures.visitors,bounds[0],bounds[1],bounds[2]-bounds[0],bounds[3]-bounds[1]);reflection.frameKey=key;
       }
-      const texture=reflection.texture;reflection.scale.set(64/texture.height,-26/texture.height);reflection.position.set(state.x-texture.width*64/texture.height/2,state.y+36);
-      footShadow.clear().ellipse(state.x,state.y+9,17,3).fill({color:0x193443,alpha:.18});
+      const texture=reflection.texture,height=data.visibleHeight,ratio=height/texture.height,reflectionHeight=height*.3;
+      // Cropped held objects may be asymmetric. Use the same measured foot
+      // pivot as the DOM figure, so the reflection cannot drift when turning.
+      reflection.scale.set(ratio,-reflectionHeight/texture.height);
+      reflection.position.set(state.x+(bounds[0]-pivot)*ratio,state.y+data.footOffset+reflectionHeight);
+      footShadow.clear().ellipse(state.x,state.y+data.footOffset,21,3.5).fill({color:0x193443,alpha:.18});
     }
     // Render only on movement, navigation or resize, never an idle GPU loop.
     const signature=[state.room,state.camera,state.cameraY,state.x,state.y,state.stop,document.getElementById('visitor').dataset.facing,width,height,scale].join(':');
     if(signature!==last){app.render();last=signature;}
   }
+  function enterFallback(dispose=false){
+    ready=false;last=null;
+    document.body.classList.remove('pixi-ready');document.body.classList.add('renderer-fallback');
+    if(dispose){
+      const failed=app;app=null;
+      // Application.init can fail before a renderer or all plugins exist.
+      // Do not invoke an uninitialised plugin destroy path in that state.
+      if(failed?.renderer){
+        try{failed.destroy({removeView:true},{children:true});}
+        catch{
+          try{failed.stage?.destroy({children:true});}catch{}
+          try{failed.renderer?.destroy({removeView:true});}catch{}
+        }
+      }else{try{failed?.stage?.destroy({children:true});}catch{}}
+      for(const texture of new Set([...roomFrames,...Object.values(textures)])){try{texture?.destroy(true);}catch{}}
+      roomFrames.length=0;for(const key of Object.keys(textures))delete textures[key];
+      scene=null;room=null;reflection=null;footShadow=null;floorMesh=null;floorKey='';
+    }
+    // This already has its own null-2D-context guard; CSS remains usable even
+    // when neither the WebGL renderer nor a Canvas2D projection can initialise.
+    if(pending)window.ArchivePerspective?.drawFallback(pending,pending.scale);
+  }
   window.archiveRenderer={update,get ready(){return ready;},get partition(){return {...partitionGeometry};}};
   async function init(){
     if(!window.PIXI)throw new Error('Renderer unavailable');
+    // Pixi's texture upload may itself need Canvas2D even after selecting a GPU
+    // backend. Refuse that path before init instead of throwing from a later
+    // asynchronous texture upload on restricted/no-canvas browsers.
+    if(!document.createElement('canvas').getContext('2d'))throw new Error('Canvas unavailable');
     app=new PIXI.Application();
     await app.init({width:viewport.clientWidth,height:viewport.clientHeight,preference:'webgl',antialias:true,resolution:Math.min(devicePixelRatio||1,2),autoDensity:true,autoStart:false,background:palette.base});
-    const load=src=>new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(PIXI.Texture.from(img));img.onerror=reject;img.src=src;});
-    [textures.rooms,textures.lab,textures.visitors]=await Promise.all([load('assets/rooms-open-v10.webp'),load('assets/lab-open-v10.webp'),load('assets/visitor-consistency-v8.webp')]);
-    // Trim the old heavy side walls once, keeping original room registration.
-    [[0,0],[1,0],[0,1],null,[1,1],[1,1]].forEach(cell=>roomFrames.push(cell?crop(textures.rooms,cell[0]*627+43,cell[1]*627,541,410):crop(textures.lab,86,0,1082,820)));
+    const load=src=>new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>{try{resolve(PIXI.Texture.from(img));}catch(error){reject(error);}};img.onerror=reject;img.src=src;});
+    const environment=['school','university','military','lab','office'];
+    const results=await Promise.allSettled([...environment.map(name=>load('assets/room-'+name+'-v14.webp')),load(window.JOURNEY_VISITOR_FRAME_DATA?.source||'assets/visitor-consistency-v8.webp')]);
+    if(results.some(result=>result.status==='rejected')){
+      for(const result of results)if(result.status==='fulfilled')result.value.destroy(true);
+      throw new Error('Environment art unavailable');
+    }
+    const loaded=results.map(result=>result.value);textures.visitors=loaded[5];
+    // Exact 600:340 art registration. No unequal x/y stretch or furniture crop.
+    [0,1,2,3,4,4].forEach(index=>roomFrames.push(loaded[index]));
     host.append(app.canvas);app.canvas.setAttribute('aria-hidden','true');
-    app.canvas.addEventListener('webglcontextlost',()=>{ready=false;document.body.classList.remove('pixi-ready');document.body.classList.add('renderer-fallback');if(pending)window.ArchivePerspective?.drawFallback(pending,pending.scale);});
-    app.canvas.addEventListener('webglcontextrestored',()=>{ready=true;last=null;document.body.classList.add('pixi-ready');if(pending)update(pending,pending.scale);});
-    ready=true;document.body.classList.add('pixi-ready');if(pending)update(pending,pending.scale);
+    app.canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();enterFallback();});
+    app.canvas.addEventListener('webglcontextrestored',()=>{
+      if(!app?.renderer)return;
+      try{ready=true;last=null;document.body.classList.remove('renderer-fallback');document.body.classList.add('pixi-ready');if(pending)update(pending,pending.scale);}
+      catch{enterFallback(true);}
+    });
+    ready=true;document.body.classList.remove('renderer-fallback');document.body.classList.add('pixi-ready');if(pending)update(pending,pending.scale);
   }
-  init().catch(()=>{document.body.classList.add('renderer-fallback');});
+  init().catch(()=>enterFallback(true));
 })();

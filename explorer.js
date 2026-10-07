@@ -52,8 +52,9 @@
   motionQuery.addEventListener('change', event => {$('#reduce-motion').checked=event.matches;applyMotion();});
   applyMotion();
   function stopMarkup(stop,index) {
-    const content=stop.scenic?(stop.period?'<p class="overline">'+escape(stop.period)+'</p>':'')+'<h2>'+escape(stop.title)+'</h2>'+(stop.subtitle?'<p>'+escape(stop.subtitle)+'</p>':''):'<p class="overline">'+escape(stop.period)+'</p><h2>'+escape(stop.title)+'</h2><p>'+escape(stop.subtitle)+'</p><button type="button" data-read="'+index+'">이 시기 읽기</button>';
-    return '<article class="exhibit'+(stop.scenic?' scenic-exhibit':'')+'" style="left:'+stop.x+'px" data-stop="'+index+'"><div class="exhibit-info">'+content+'</div>'+npcMarkup(stop.sprite,false)+'</article>';
+    // Text and its reading action live in the unscaled guide. The room contains
+    // only its artwork, so large type never covers furniture or the character.
+    return '<div class="exhibit'+(stop.scenic?' scenic-exhibit':'')+'" style="left:'+stop.x+'px" data-stop="'+index+'" aria-hidden="true">'+npcMarkup(stop.sprite,false)+'</div>';
   }
   // Junbo belongs to each exhibit, never to the visitor's movement loop.
   function npcMarkup(sprite,showName=true) {return '<div class="npc-display" aria-hidden="true"><span class="pixel-sprite junbo-identity '+sprite+'"></span>'+(showName?'<span class="npc-label">심준보</span>':'')+'</div>';}
@@ -63,7 +64,7 @@
     document.body.dataset.era=era;
     visitor.dataset.outfit=({school:'sport',university:'campus',military:'service',lab:'lab'})[era]||'suit';
   }
-  Promise.all(['assets/visitor-consistency-v8.webp','assets/junbo-props-v4.webp','assets/rooms-open-v10.webp','assets/lab-open-v10.webp','assets/junbo-life-stages-v7.webp'].map(src=>new Promise((resolve,reject)=>{
+  Promise.all(['assets/visitor-consistency-v8.webp','assets/visitor-journey-v14.webp','assets/junbo-props-v4.webp','assets/room-school-v14.webp','assets/room-university-v14.webp','assets/room-military-v14.webp','assets/room-lab-v14.webp','assets/room-office-v14.webp','assets/junbo-life-stages-v7.webp'].map(src=>new Promise((resolve,reject)=>{
     const img=new Image();img.onload=resolve;img.onerror=reject;img.src=src;
   }))).then(()=>document.body.classList.add('era-art-ready')).catch(()=>{
     const notice=$('#art-status');notice.hidden=false;
@@ -95,17 +96,19 @@
     document.querySelectorAll('[data-dir="up"],[data-dir="down"]').forEach(button => button.hidden=journey);
     document.querySelectorAll('[data-room]').forEach(button => button.setAttribute('aria-pressed',String(button.dataset.room===room)));
     $('#exhibits').innerHTML=journey?stops.map(stopMarkup).join(''):gallery.map(galleryMarkup).join('');
+    $('#location-summary').hidden=!journey;
     if(!journey&&fishingReady){updateEra();window.FishingExhibition.enter();}
     else {updateLocation();render();}
     reveal(viewport);
-    if(focus) viewport.focus({preventScroll:true});
+    if(focus) focusExhibit();
   }
   function focusExhibit() {
     viewport.focus({preventScroll:true});
     // On stacked/mobile layouts the map is below the scene. Bring the changed
     // exhibit back into view instead of leaving visitors below their destination.
     const box=viewport.getBoundingClientRect();
-    if(matchMedia('(max-width:800px)').matches&&(box.top<0||box.bottom>innerHeight))viewport.scrollIntoView({block:'start',behavior:'auto'});
+    const stackedJourney=state.room==='journey'&&matchMedia('(max-width:1000px)').matches;
+    if((stackedJourney||matchMedia('(max-width:800px), (max-width:1100px) and (max-height:700px)').matches)&&(box.top<0||box.bottom>innerHeight))viewport.scrollIntoView({block:'start',behavior:'auto'});
   }
   function jump(index) {clearInput();state.stop=index;state.x=stops[index].x;state.y=440;updateLocation();render();focusExhibit();}
   function galleryJump(index) {clearInput();state.x=gallery[index].x;state.y=gallery[index].y;updateLocation();render();focusExhibit();}
@@ -129,7 +132,9 @@
   function updateLocation() {
     if(state.room==='journey'){
       state.stop=stops.reduce((best,stop,index)=>Math.abs(stop.x-state.x)<Math.abs(stops[best].x-state.x)?index:best,0);
-      state.near=Math.abs(stops[state.stop].x-state.x)<230?'journey':null;
+      // The guide always describes one current room, including its boundaries.
+      // Reading is not gated by a hidden proximity band between two exhibits.
+      state.near='journey';
       document.querySelectorAll('[data-stop]').forEach(el=>{const current=Number(el.dataset.stop)===state.stop;el.classList.toggle('current',current);el.inert=!current;});
       document.querySelectorAll('[data-jump]').forEach(el=>el.setAttribute('aria-current',String(Number(el.dataset.jump)===state.stop)));
     } else {
@@ -148,9 +153,12 @@
     const title=state.room==='journey'?stop.title:tile.code+' · '+tile.label;
     $('#location-title').textContent=title;
     $('#scene-position').textContent=state.room==='journey'?String(state.stop+1).padStart(2,'0')+' / '+String(stops.length).padStart(2,'0'):tile.code+' / 3 × 3';
-    $('#location-subtitle').textContent=state.room==='journey'?(stop.scenic?[stop.period,stop.subtitle].filter(Boolean).join(' · '):stop.period):(project?project.period:tile.description||'다른 전시로 자유롭게 이동하세요.');
+    if(state.room==='journey')$('#scene-label').textContent=['고등학교','대학 시절','군 복무','실험실','첫 개발 경력','현재 경력'][state.stop];
+    $('#location-subtitle').textContent=state.room==='journey'?stop.period:(project?project.period:tile.description||'다른 전시로 자유롭게 이동하세요.');
+    $('#location-summary').textContent=state.room==='journey'?(stop.subtitle||''):'';
+    $('#location-summary').hidden=state.room!=='journey'||!stop.subtitle;
     $('#location-label').textContent=state.near?'현재 위치':'다음 전시로 이동 중';
-    const scenery=state.room==='journey'?stop.scenic:!(project||tile.href||tile.return);
+    const scenery=state.room==='journey'?false:!(project||tile.href||tile.return);
     interact.disabled=!state.near||scenery;
     const action=scenery?'관람 중':!state.near?'전시 앞 통로로 이동하세요':state.room==='journey'?'이력 읽기':project?'프로젝트 읽기':tile.return?'이력서로 이동':'문서 보기';
     interact.innerHTML=action+(state.near&&!scenery?' <kbd>Space</kbd>':'');
@@ -177,9 +185,9 @@
     const screens=project.screens?'<details class="detail-screens"><summary>화면과 기능의 변화</summary><p class="code-caption">'+escape(project.screens.caption)+'</p>'+project.screens.items.map(screen=>'<figure><img src="'+escape(screen.src)+'" alt="'+escape(screen.title)+'. 가상 데이터로 재구성한 설명용 화면." loading="lazy"><figcaption><strong>'+escape(screen.title)+'</strong><p>'+escape(screen.description)+'</p></figcaption></figure>').join('')+'</details>':'';
     return decisions+related+screens;
   }
-  function openDetail(kind,index=state.stop) {
-    if(dialog.open||(kind==='journey'&&stops[index].scenic))return;
-    clearInput();returnFocus=document.activeElement;
+  function openDetail(kind,index=state.stop,origin=document.activeElement) {
+    if(dialog.open)return;
+    clearInput();returnFocus=origin;
     $('#detail-kind').textContent=kind==='project'?'포트폴리오':'이력서';
     let html;
     if(kind==='project'){
@@ -190,7 +198,8 @@
         projectEvidence(project)+'<div class="detail-links"><a href="normal.html#case-'+(index+1)+'">문서형 포트폴리오에서 보기</a><a href="pdf/portfolio.pdf" download="심준보_포트폴리오.pdf">포트폴리오 PDF</a></div>';
     } else {
       const stop=stops[index];
-      html='<p class="period">'+escape(stop.period)+'</p><h2 id="detail-title">'+escape(stop.title)+'</h2><p>'+escape(stop.subtitle)+'</p>'+list(stop.items)+
+      const items=stop.items||[];
+      html='<p class="period">'+escape(stop.period)+'</p><h2 id="detail-title">'+escape(stop.title)+'</h2>'+(stop.subtitle?'<p>'+escape(stop.subtitle)+'</p>':'')+(items.length?list(items):'')+
         '<div class="detail-links"><a href="normal.html#resume">전체 이력서</a><a href="pdf/resume.pdf" download="심준보_이력서.pdf">이력서 PDF</a></div>';
     }
     $('#detail-content').innerHTML=html;
@@ -199,6 +208,10 @@
   }
   function activate() {if(dialog.open)return;if(window.FishingExhibition?.active){window.FishingExhibition.act();return;}if(!state.near)return;if(state.room==='gallery')galleryAction(state.gallery);else openDetail('journey');}
   interact.addEventListener('click',activate);
+  // An intentional move from the scene to its reading control freezes the
+  // selected era before activation, even if a movement key is still held.
+  interact.addEventListener('focus',()=>{if(state.room==='journey')clearInput();});
+  interact.addEventListener('pointerdown',()=>{if(state.room==='journey')clearInput();});
   $('#close-dialog').addEventListener('click',()=>dialog.close());
   dialog.addEventListener('keydown',event=>{
     if(event.key!=='Tab')return;
@@ -207,10 +220,23 @@
     if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
     if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
   });
-  dialog.addEventListener('close',()=>{clearInput();if(returnFocus?.isConnected)returnFocus.focus({preventScroll:true});});
+  function availableFocusTarget(element) {
+    if(!(element instanceof HTMLElement)||!element.isConnected||element.closest('[hidden],[inert]')||element.matches(':disabled')||!element.matches('button,a[href],input,textarea,select,summary,[tabindex]')||!element.getClientRects().length)return false;
+    const style=getComputedStyle(element);
+    return style.visibility==='visible'&&Number(style.opacity)!==0;
+  }
+  dialog.addEventListener('close',()=>{
+    clearInput();
+    // A catch card disappears when its project opens. Restore the initiating
+    // control only while it still exists and can receive visible keyboard focus.
+    const selected=window.FishingExhibition?.snapshot.selected;
+    const target=[returnFocus,viewport,$('[data-fish-read="'+selected+'"]'),interact].find(availableFocusTarget);
+    returnFocus=null;
+    if(target===viewport)focusExhibit();else target?.focus({preventScroll:true});
+  });
   dialog.addEventListener('click', event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}});
   const keyDirections={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down'};
-  function editableTarget(target) {return target.closest('button,a,input,textarea,select,summary,[contenteditable="true"]');}
+  function editableTarget(target) {return target.closest('button,a,input,textarea,select,summary,.exhibit-info,[contenteditable="true"]');}
   document.addEventListener('keydown',event=>{
     if(dialog.open||event.ctrlKey||event.metaKey||event.altKey||editableTarget(event.target))return;
     const direction=keyDirections[event.key];
@@ -270,7 +296,7 @@
   }
   new ResizeObserver(render).observe(viewport);
   try {fishingReady=Boolean(window.FishingExhibition?.attach({
-    openProject:(index,section)=>{openDetail('project',index);if(section){const target=dialog.querySelector(section);if(target){if(target.tagName==='DETAILS')target.open=true;target.scrollIntoView({block:'start'});}}},
+    openProject:(index,section,origin)=>{openDetail('project',index,origin);if(section){const target=dialog.querySelector(section);if(target){if(target.tagName==='DETAILS')target.open=true;target.scrollIntoView({block:'start'});}}},
     journey:()=>setRoom('journey')
   }));} catch(error) {console.warn('Fishing view unavailable; document exhibits remain accessible.',error);}
   setRoom('journey',false);frame=requestAnimationFrame(tick);
