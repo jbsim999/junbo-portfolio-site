@@ -71,3 +71,126 @@ document.querySelector('#project-content').innerHTML = asArray(profile.projects)
   </div></article>`).join('');
 
 document.querySelector('#career-content').innerHTML = asArray(profile.career).map(job => `<article class="career-item"><div><h3>${escapeHtml(job.company)}</h3><p class="period">${escapeHtml(job.role)}<br>${escapeHtml(job.period)}</p></div><div>${asArray(job.groups).map(([title, items]) => `<h4>${escapeHtml(title)}</h4>${bullets(items)}`).join('')}</div></article>`).join('');
+
+// An optional, independent document section. Build off-screen so malformed or
+// unavailable personal-work data leaves the static fallback and career intact.
+(() => {
+  const container = document.getElementById('personal-project-content');
+  if (!container) return;
+  const data = window.PERSONAL_WORK;
+  if (!data || !Array.isArray(data.items)) return;
+  const text = value => typeof value === 'string' ? value.trim() : '';
+  const strings = value => Array.isArray(value) ? value.map(text).filter(Boolean) : [];
+  const element = (tag, className, value) => {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (value) node.textContent = value;
+    return node;
+  };
+  const safeHref = value => {
+    const href = text(value);
+    if (!href || /[\u0000-\u0020\u007f\\]/.test(href)) return '';
+    try {
+      const url = new URL(href, location.href);
+      if (url.username || url.password) return '';
+      if (/^https:\/\//i.test(href)) return url.protocol === 'https:' ? href : '';
+      const local = /^#[A-Za-z][A-Za-z0-9_-]*$/.test(href) || /^(?:\.\/)?[A-Za-z0-9][A-Za-z0-9_./-]*\.(?:html?|pdf)(?:[?#][^\s]*)?$/i.test(href);
+      return local && !href.split(/[/?#]/).includes('..') && url.origin === location.origin ? href : '';
+    } catch { return ''; }
+  };
+  const appendParagraph = (parent, title, value) => {
+    const content = text(value);
+    if (!content) return;
+    parent.append(element('h4', '', title), element('p', '', content));
+  };
+
+  try {
+    const fragment = document.createDocumentFragment();
+    const intro = text(data.intro);
+    const approach = text(data.aiApproach);
+    if (intro) fragment.append(element('p', 'personal-work-intro', intro));
+    if (approach) fragment.append(element('p', 'personal-work-ai', approach));
+    const cards = element('div', 'personal-work-list');
+    const usedIds = new Set();
+
+    data.items.forEach((item, index) => {
+      if (!item || typeof item !== 'object') return;
+      const title = text(item.title);
+      const summary = text(item.summary);
+      if (!title || !summary) return;
+      const candidate = text(item.id);
+      const baseId = /^[a-z][a-z0-9-]*$/.test(candidate) ? candidate : `item-${index + 1}`;
+      let id = baseId;
+      let suffix = 2;
+      while (usedIds.has(id)) id = `${baseId}-${suffix++}`;
+      usedIds.add(id);
+      const card = element('article', 'personal-work-card');
+      card.id = `personal-${id}`;
+      const heading = element('h3', '', title);
+      heading.id = `${card.id}-title`;
+      card.setAttribute('aria-labelledby', heading.id);
+      const meta = element('div', 'personal-work-meta');
+      if (text(item.category)) meta.append(element('span', 'personal-work-category', text(item.category)));
+      if (text(item.status)) meta.append(element('span', 'personal-work-status', text(item.status)));
+      if (meta.childElementCount) card.append(meta);
+      card.append(heading, element('p', 'personal-work-summary', summary));
+      const technologies = strings(item.tags);
+      if (technologies.length) {
+        const tagList = element('ul', 'personal-work-tags');
+        tagList.setAttribute('aria-label', '사용 기술');
+        technologies.forEach(technology => tagList.append(element('li', '', technology)));
+        card.append(tagList);
+      }
+      if (text(item.role)) {
+        const role = element('p', 'personal-work-role');
+        role.append(element('strong', '', '담당 역할'), document.createTextNode(text(item.role)));
+        card.append(role);
+      }
+
+      const details = element('details', 'personal-work-details');
+      details.append(element('summary', '', `${title} · 구현과 검증 내용`));
+      const body = element('div', 'personal-work-detail-body');
+      const focus = strings(item.focus);
+      if (focus.length) {
+        const list = element('ul', 'personal-work-focus');
+        focus.forEach(point => list.append(element('li', '', point)));
+        body.append(element('h4', '', '핵심 구현'), list);
+      }
+      const decisions = Array.isArray(item.decisions) ? item.decisions.filter(decision => decision && text(decision.title) && text(decision.body)) : [];
+      if (decisions.length) {
+        const list = element('dl', 'personal-work-decisions');
+        decisions.forEach(decision => list.append(element('dt', '', text(decision.title)), element('dd', '', text(decision.body))));
+        body.append(element('h4', '', '기술적 선택'), list);
+      }
+      appendParagraph(body, '검증', item.validation);
+      appendParagraph(body, '현재 범위', item.scope);
+      if (body.childElementCount) {
+        details.append(body);
+        card.append(details);
+      }
+
+      const links = element('div', 'personal-work-links');
+      if (Array.isArray(item.links)) item.links.forEach(link => {
+        if (!link || !text(link.label)) return;
+        const href = safeHref(link.href);
+        if (!href) return;
+        const anchor = element('a', '', text(link.label));
+        anchor.setAttribute('href', href);
+        if (/^https:\/\//i.test(href)) {
+          anchor.target = '_blank';
+          anchor.rel = 'noopener noreferrer';
+          anchor.append(element('span', 'sr-only', ' (새 탭)'));
+        }
+        links.append(anchor);
+      });
+      if (links.childElementCount) card.append(links);
+      cards.append(card);
+    });
+
+    if (!cards.childElementCount) return;
+    fragment.append(cards);
+    container.replaceChildren(fragment);
+  } catch {
+    // The existing static message remains available when optional data fails.
+  }
+})();
