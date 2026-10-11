@@ -16,7 +16,7 @@
     {title:'육군', short:'군 복무', period:'2014.08 - 2016.03', subtitle:'취사병 · 만기전역', scenic:true, scene:'military', sprite:'soldier-cook'},
     {title:earlierWork.company, short:'오뗄 · 이전 직무', period:earlierWork.period, subtitle:'품질관리·실험 업무 · 데이터 비교 자동화', items:[earlierWork.description], scene:'lab', sprite:'lab-scientist'},
     {title:firstJob.company, short:'첫 백엔드 경력', period:firstJob.period, subtitle:'IoT 통신 서버와 웹 서비스 개발', items:firstJob.items, scene:'office', sprite:'developer-early'},
-    {title:currentJob.company, short:'현재 경력', period:currentJob.period, subtitle:'책이음 서비스 운영·개선', items:currentJob.items, scene:'office', sprite:'developer-coffee'}
+    {title:currentJob.company, short:'현재 경력', period:currentJob.period, subtitle:'약 690만 회원 규모의 책이음 서비스 운영·개선', items:currentJob.items, scene:'office', sprite:'developer-coffee'}
   ].map((stop,index)=>({...stop,x:index*600+300}));
   const projects = profile.projects;
   const gallery = [
@@ -89,8 +89,8 @@
   function galleryMarkup(tile,index) {
     const project=projects[tile.project];
     const core=project&&!tile.section;
-    const visuals={성능:'<strong>30분</strong><i>→</i><strong>100ms</strong>',데이터:'<span>회원 상태</span><i>→</i><span>갱신 규칙</span>',연계:'<span>직접 조회</span><i>↔</i><span>이기종 도서관</span>','병렬 수집':'<strong>20</strong><span>지역 / 그룹</span>',정책:'<span>WEB</span><i>→</i><span>Soft Delete</span>',화면:'<span>조회</span><span>확인</span><span>동기화</span>',문서:'<span>RESUME</span><span>PORTFOLIO</span>'};
-    const summaries=['집계 구조와 인덱스를 정비해 오래 걸리던 통계 조회를 개선했습니다.','과도한 동시 요청을 피하면서 수동 수집 업무를 자동화했습니다.','필요한 문서를 골라 내려받을 수 있습니다.','시기에 따라 달라지는 모습과 함께 경력을 살펴보세요.','회원 상태에 맞게 갱신 조건을 나누고 데이터 정합성을 보완했습니다.','WEB 탈퇴 경로에도 기존 서비스와 같은 처리 방식을 적용했습니다.','회사별 담당 업무와 구현 경험을 정리했습니다.','조회부터 가입지역 확인, 동기화까지 화면의 변화를 살펴보세요.','유지보수 업체나 사서를 거치던 확인 업무를 직접 조회로 바꿨습니다.'];
+    const visuals={성능:'<strong>약 30분</strong><i>→</i><strong>100ms 이하</strong>',데이터:'<span>회원 상태</span><i>→</i><span>갱신 규칙</span>',연계:'<span>직접 조회</span><i>↔</i><span>이기종 도서관</span>','병렬 수집':'<strong>20</strong><span>지역 / 그룹</span>',정책:'<span>WEB</span><i>→</i><span>Soft Delete</span>',화면:'<span>조회</span><span>확인</span><span>동기화</span>',문서:'<span>RESUME</span><span>PORTFOLIO</span>'};
+    const summaries=['집계 구조와 인덱스를 정비해 오래 걸리던 통계 조회를 개선했습니다.','지역을 최대 20개씩 작업 그룹으로 나눠 수동 수집 업무를 자동화했습니다.','필요한 문서를 골라 내려받을 수 있습니다.','시기에 따라 달라지는 모습과 함께 경력을 살펴보세요.','회원 상태에 맞게 갱신 조건을 나누고 데이터 정합성을 보완했습니다.','WEB 탈퇴 경로에도 기존 서비스와 같은 처리 방식을 적용했습니다.','회사별 담당 업무와 구현 경험을 정리했습니다.','조회부터 가입지역 확인, 동기화까지 화면의 변화를 살펴보세요.','유지보수 업체나 사서를 거치던 확인 업무를 직접 조회로 바꿨습니다.'];
     const content='<p class="overline"><span>'+tile.code+' / '+(core?'PROJECT 0'+(tile.project+1):tile.section?'RELATED WORK':'DOCUMENT')+'</span><span>J.</span></p><h2>'+escape(tile.label)+'</h2><p class="station-result">'+escape(tile.description||(core?project.result:tile.return?'학교에서 현재 직장까지':'담당 업무와 문제 해결 기록'))+'</p><div class="station-visual" aria-hidden="true">'+(visuals[tile.visual]||'<span>JUNBO SIM</span>')+'</div><p class="station-summary">'+summaries[index]+'</p><button type="button" data-gallery-action="'+index+'">'+(core?'문제 해결 과정 읽기':tile.section?'구현 내용 보기':tile.return?'이력서로 이동':'문서 열기')+' ↗</button>';
     return '<article class="exhibit gallery-exhibit '+(core?'station-project':'station-support')+'" style="left:'+tile.x+'px;top:'+(Math.floor(index/3)*520+49)+'px" data-gallery-exhibit="'+index+'"><div class="station-info">'+content+'</div></article>';
   }
