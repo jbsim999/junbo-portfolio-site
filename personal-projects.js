@@ -1,7 +1,101 @@
 window.PERSONAL_WORK = {
-  intro: 'AI 도구의 작업 기준을 정리하고, 게임의 규칙을 일관된 상태 흐름으로 연결한 개인 프로젝트입니다.',
-  aiApproach: '코드 구현·수정과 지침 초안 작성에는 AI 도구를 활용했습니다.',
+  intro: '교육 제품의 학습·실행 흐름, AI 도구의 작업 기준과 게임 규칙을 다룬 개인 프로젝트입니다.',
+  aiApproach: '교육 제품과 게임의 코드 구현·수정, 교재·지침 초안 작성에는 AI 도구를 활용했습니다.',
   items: [
+    {
+      "id": "java-edu",
+      "title": "Java Edu",
+      "summary": "Java 전환과 OOP·백엔드 심화 학습을 위한 개인 교육 제품입니다. 웹 교재와 설치형 앱을 함께 제공하고, JDK·Maven을 포함한 로컬 실행 환경에서 실무 과제를 확인할 수 있도록 구성했습니다.",
+      "role": "학습 대상·교육 구성·실무 기술 범위 정의, 실행·배포 요구사항 구체화, AI 도구 협업, 내용·화면 피드백 반영.",
+      "category": "개인 교육 제품 · Java 학습",
+      "status": "Windows·macOS 프리뷰 공개 (내용 기준 2026.10.21)",
+      "tags": [
+        "교육 제품 기획",
+        "Java 학습",
+        "로컬 실행 환경",
+        "AI 도구 협업",
+        "Windows·macOS 프리뷰"
+      ],
+      "focus": [
+        "이론·예시·문제풀이·실무 심화·직접 코딩으로 이어지는 34수업 학습 흐름",
+        "JDK·Maven을 포함한 설치형 실행 환경과 고정 POM·테스트 기반 과제 판정",
+        "교재 설명·코드 표시·본문 화면에 대한 피드백 반영"
+      ],
+      "decisions": [
+        {
+          "title": "웹 교재와 로컬 실행 환경의 역할 분리",
+          "body": "교재와 공용 학습 화면은 웹으로 제공하고, 실무 과제는 학습자 PC의 JDK·Maven으로 실행하는 방향을 요구사항으로 정했습니다. 브라우저에서 모든 실행을 처리하기보다 Java·Spring 학습에 필요한 로컬 실행 환경을 제품에 포함하는 선택입니다."
+        },
+        {
+          "title": "실행 성공과 과제 판정의 구분",
+          "body": "제품은 고정 POM·테스트·편집 파일 목록을 기준으로 과제를 실행합니다. 기준 답안의 통과만 보는 방식에 그치지 않고 미완성 starter가 실패하는지도 확인하는 검증 구조를 갖췄습니다."
+        },
+        {
+          "title": "설치 파일의 무결성 확인",
+          "body": "프로젝트 검증 기록에는 Windows 패키지의 도구 파일 누락을 원본 파일 목록과 해시 대조로 확인하고 내부 패키지 형식을 조정한 사례가 남아 있습니다. 빌드 성공과 설치 후 파일 상태를 별도로 확인한 사례입니다."
+        }
+      ],
+      "validation": "기본 실무 20개 과제에서 기준 답안의 JUnit 54개 통과와 미완성 starter 20개 실패는 제품의 기존 검증 기록입니다.",
+      "links": [
+        {
+          "label": "GitHub 저장소",
+          "href": "https://github.com/jbsim999/java-edu/tree/e6f372cc9651f288536087bf4ff3e718fc881c60"
+        },
+        {
+          "label": "Windows 프리뷰",
+          "href": "https://github.com/jbsim999/java-edu/releases/tag/v0.3.1"
+        },
+        {
+          "label": "macOS 프리뷰",
+          "href": "https://github.com/jbsim999/java-edu/releases/tag/v0.4.0"
+        }
+      ]
+    },
+    {
+      "id": "javascript-edu",
+      "title": "JavaScript-edu",
+      "summary": "JavaScript 전환과 심화 학습을 위한 개인 교육 제품입니다. 실제 코드 실행과 행동 조건에 따른 제출 판정을 구분하고, 학습자가 수정한 코드와 실행 결과가 어긋나지 않도록 상태를 관리합니다.",
+      "role": "학습 대상·로드맵·실행·배포 요구사항 구체화, AI 도구 협업, 이용자 피드백 수집과 교재·화면 개선 요청.",
+      "category": "개인 교육 제품 · JavaScript 학습",
+      "status": "Windows·macOS 프리뷰 공개 (0.1.3 · 내용 기준 2026.10.21)",
+      "tags": [
+        "교육 제품 기획",
+        "JavaScript 학습",
+        "코드 실행·자동 채점",
+        "상태 정합성",
+        "AI 도구 협업"
+      ],
+      "focus": [
+        "52강·55개 코딩 실습으로 구성한 이론·예시·문제풀이·실무 심화·직접 코딩 흐름",
+        "실행 성공과 행동 조건에 따른 제출 통과를 나눈 학습 경험",
+        "코드 수정·취소·전환 뒤 늦게 도착한 이전 결과를 현재 성취에서 제외하는 상태 처리"
+      ],
+      "decisions": [
+        {
+          "title": "실행과 제출 판정의 역할 분리",
+          "body": "제품은 코드가 실행됐다는 사실만으로 과제를 통과시키지 않고, 고정 입력과 관찰 조건으로 제출 결과를 확인합니다. 지원하지 않는 실행 환경이나 인프라 오류는 학습자의 오답과 구분합니다."
+        },
+        {
+          "title": "이전 비동기 결과가 현재 성취를 바꾸지 않도록 처리",
+          "body": "제품은 코드 수정·실행 취소·강의 또는 호스트 전환 뒤 이전 결과가 도착할 수 있는 상황을 처리합니다. 요청과 코드·실행 환경의 식별값을 대조해 현재 상태와 맞지 않는 결과를 반영하지 않습니다."
+        },
+        {
+          "title": "운영체제와 CPU를 구분한 프리뷰 배포",
+          "body": "Windows x64, macOS Intel x64, Apple Silicon arm64에서 실행할 수 있는 프리뷰 패키지를 공개했습니다. 패키지 파일과 실제 앱 실행은 별도의 확인 대상으로 다뤘습니다."
+        }
+      ],
+      "validation": "0.1.3 네이티브 CI의 제품 검증 기록에는 브라우저 44실습·361개 행동 조건과 Node.js 11실습·110개 행동 조건이 남아 있습니다.",
+      "links": [
+        {
+          "label": "GitHub 저장소",
+          "href": "https://github.com/jbsim999/JS-edu/tree/b06ce3bb5dce5ac2aaecd79c9f7fcaa194934b01"
+        },
+        {
+          "label": "0.1.3 프리뷰",
+          "href": "https://github.com/jbsim999/JS-edu/releases/tag/v0.1.3"
+        }
+      ]
+    },
     {
       id: 'gangho-munparok',
       title: '강호문파록',
@@ -96,6 +190,8 @@ window.PERSONAL_WORK = {
 };
 
 window.PERSONAL_WORK.items = [
+  window.PERSONAL_WORK.items.find(item => item.id === 'java-edu'),
+  window.PERSONAL_WORK.items.find(item => item.id === 'javascript-edu'),
   window.PERSONAL_WORK.items.find(item => item.id === 'custom-skills'),
   window.PERSONAL_WORK.items.find(item => item.id === 'gangho-munparok'),
   window.PERSONAL_WORK.items.find(item => item.id === 'simple-game1')
