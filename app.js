@@ -148,21 +148,22 @@ document.querySelector('#career-content').innerHTML = asArray(profile.career).ma
       }
 
       const details = element('details', 'personal-work-details');
-      details.append(element('summary', '', `${title} · 구현과 검증 내용`));
+      const labels = item.labels && typeof item.labels === 'object' ? item.labels : {};
+      details.append(element('summary', '', `${title} · ${text(labels.details) || text(labels.decisions) || '구현과 검증 내용'}`));
       const body = element('div', 'personal-work-detail-body');
       const focus = strings(item.focus);
       if (focus.length) {
         const list = element('ul', 'personal-work-focus');
         focus.forEach(point => list.append(element('li', '', point)));
-        body.append(element('h4', '', '핵심 구현'), list);
+        body.append(element('h4', '', text(labels.focus) || '핵심 구현'), list);
       }
       const decisions = Array.isArray(item.decisions) ? item.decisions.filter(decision => decision && text(decision.title) && text(decision.body)) : [];
       if (decisions.length) {
         const list = element('dl', 'personal-work-decisions');
         decisions.forEach(decision => list.append(element('dt', '', text(decision.title)), element('dd', '', text(decision.body))));
-        body.append(element('h4', '', '기술적 선택'), list);
+        body.append(element('h4', '', text(labels.decisions) || '기술적 선택'), list);
       }
-      appendParagraph(body, '검증', item.validation);
+      appendParagraph(body, text(labels.validation) || '검증', item.validation);
       appendParagraph(body, '현재 범위', item.scope);
       if (body.childElementCount) {
         details.append(body);
