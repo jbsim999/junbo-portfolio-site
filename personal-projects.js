@@ -1,10 +1,18 @@
 window.PERSONAL_WORK = {
-  intro: '교육 제품의 학습·실행 흐름, AI 도구의 작업 기준과 게임 규칙을 다룬 개인 프로젝트입니다.',
+  intro: '교육용 프로그램, 웹 전시관, 개발 도구와 게임을 만든 기록입니다.',
   aiApproach: '교육 제품과 게임의 코드 구현·수정, 교재·지침 초안 작성에는 AI 도구를 활용했습니다.',
   items: [
     {
       "id": "java-edu",
       "title": "Java Edu",
+      "preview": {
+        "src": "assets/java-edu-learning-lab.png",
+        "width": 1440,
+        "height": 1120,
+        "alt": "왼쪽에 Java 수업 목록, 오른쪽에 재고 객체 설계 과제와 코드 편집기가 보이는 학습실",
+        "caption": "Java 웹 학습실에서 재고 객체를 설계하는 실습 화면입니다.",
+        "source": "https://github.com/jbsim999/java-edu/blob/e6f372cc9651f288536087bf4ff3e718fc881c60/README.md#학습실-미리보기"
+      },
       "summary": "AI 개발 도구를 사용해 만든 Java 실습 학습 프로그램입니다. 웹 교재와 설치형 실행 환경을 함께 제공하며, JDK·Maven을 포함한 로컬 환경에서 실무 과제를 실행하고 판정합니다.",
       "role": "학습 대상·교육 구성·실무 기술 범위 정의, 실행·배포 요구사항 구체화, AI 개발 도구에 코드·교재·검사·패키징 작업 요청, 내용·화면 피드백 반영.",
       "labels": {
@@ -59,6 +67,14 @@ window.PERSONAL_WORK = {
     {
       "id": "javascript-edu",
       "title": "JavaScript-edu",
+      "preview": {
+        "src": "assets/javascript-edu-workspace-0.1.3.png",
+        "width": 1008,
+        "height": 655,
+        "alt": "강의 목차와 이론·예시·문제풀이·실무 심화·직접 코딩 탭이 있는 바인딩과 클로저 수업",
+        "caption": "JavaScript-edu 0.1.3 Windows 앱에서 바인딩과 클로저 강의를 연 화면입니다.",
+        "source": "https://github.com/jbsim999/JS-edu/blob/b06ce3bb5dce5ac2aaecd79c9f7fcaa194934b01/README.md#학습실-미리보기"
+      },
       "summary": "AI 개발 도구를 사용해 만든 JavaScript 코드 실행·자동 채점 학습 앱입니다. 브라우저·Node.js에서 코드를 실행하고, 행동 조건으로 제출을 판정하며 Windows·macOS 프리뷰를 제공합니다.",
       "role": "학습 대상·로드맵·실행·배포 요구사항 구체화, AI 개발 도구에 코드·교재·검사·패키징 작업 요청, 이용자 피드백 수집과 교재·화면 개선.",
       "labels": {
@@ -103,6 +119,63 @@ window.PERSONAL_WORK = {
         {
           "label": "0.1.3 프리뷰",
           "href": "https://github.com/jbsim999/JS-edu/releases/tag/v0.1.3"
+        }
+      ]
+    },
+    {
+      "id": "portfolio-exhibition",
+      "title": "웹 포트폴리오와 체험형 전시관",
+      "preview": {
+        "src": "assets/fishing-beach-v11.webp",
+        "width": 1800,
+        "height": 600,
+        "alt": "맑은 바다와 모래사장을 그린 전시관 해변 배경",
+        "caption": "체험형 전시관의 프로젝트 탭에 쓰인 해변 배경입니다."
+      },
+      "category": "개인 웹 포트폴리오 · 체험형 전시",
+      "status": "2026.10 · GitHub Pages 공개",
+      "summary": "이력과 프로젝트를 바로 읽는 일반형과, 전시관을 둘러보는 체험형을 한 사이트에 담았습니다. 체험형에서도 낚시를 건너뛰고 프로젝트 설명을 읽을 수 있습니다.",
+      "role": "일반형·체험형 공개 구성과 GitHub Pages 배포.",
+      "tags": [
+        "GitHub Pages",
+        "정적 웹 포트폴리오",
+        "PixiJS",
+        "Canvas2D",
+        "HTML 읽기 패널",
+        "그래픽 대체 화면"
+      ],
+      "focus": [
+        "일반형 포트폴리오와 이력서 전시·프로젝트 해변으로 이어지는 읽기 흐름",
+        "낚시를 건너뛰어도 실무 사례 3개를 읽을 수 있는 HTML 패널",
+        "그래픽을 불러오지 못해도 문서를 읽을 수 있는 대체 화면"
+      ],
+      "decisions": [
+        {
+          "title": "읽기와 체험 기능의 분리",
+          "body": "낚시를 즐기고 싶은 사람은 해변에서 프로젝트를 낚고, 글부터 보고 싶은 사람은 실무 사례 3개를 읽기 패널에서 바로 열 수 있습니다."
+        },
+        {
+          "title": "전시 화면에 맞춘 이동 범위",
+          "body": "이력서에서는 유리 타일 안, 프로젝트에서는 모래 안에서만 상하좌우로 이동하도록 구성하고, 모바일에는 T형 4방향 버튼을 제공합니다."
+        },
+        {
+          "title": "그래픽 실패 시에도 유지되는 읽기 경험",
+          "body": "PixiJS·Canvas2D 그래픽과 별도로 네이티브 HTML 글자와 컨트롤, 그래픽 대체 화면을 두어 문서 내용을 읽을 수 있게 했습니다."
+        }
+      ],
+      "validation": "2026년 10월 GitHub Pages에 공개했고, 전시관 개편 뒤에도 배포 기록을 확인할 수 있습니다.",
+      "links": [
+        {
+          "label": "체험형 전시관",
+          "href": "game.html"
+        },
+        {
+          "label": "GitHub 저장소",
+          "href": "https://github.com/jbsim999/junbo-portfolio-site"
+        },
+        {
+          "label": "배포 기록",
+          "href": "https://github.com/jbsim999/junbo-portfolio-site/actions/runs/40518595084"
         }
       ]
     },
@@ -170,8 +243,8 @@ window.PERSONAL_WORK = {
       id: 'simple-game1',
       title: 'AI 게임 개발 프로세스 실험',
       category: '모작 기반 학습·검증 실험',
-      status: '핵심 플레이·검증 절차 구성',
-      summary: '게임 모작 1(simple-game1)을 통해 AI 게임 개발의 작업 방식과 보완사항을 탐색한 실험입니다. 이동·자동 공격·경험치·성장을 연결하는 과정에서 연속 입력, 상태 전환, 화면 경계와 패키징을 검증 항목으로 구체화했습니다.',
+      status: "2026.09 · Windows x64·Web 패키징 완료",
+      summary: "게임 모작 1(simple-game1)으로 이동·자동 공격·경험치·성장을 연결하며 AI 게임 개발의 작업 방식과 보완사항을 살핀 실험입니다. Windows x64·Web 패키지와 소스 ZIP을 만들고 SHA-256 기록을 남겼습니다.",
       role: 'AI 게임 개발 방식과 보완사항을 탐색하기 위한 실험 목적·범위 설정.',
       tags: ['Godot 4', 'GDScript', '성장 선택 대기열', '입력 경계', '패키징 스크립트'],
       focus: [
@@ -193,7 +266,7 @@ window.PERSONAL_WORK = {
           body: '플랫폼별 내보내기 후 결과 파일의 존재를 확인하고, 소스 패키지·체크섬을 생성하는 스크립트를 구성했습니다. 실행 파일 생성과 별도로 화면·입력·충돌·플랫폼별 동작을 확인하도록 검증 항목을 나눴습니다.'
         }
       ],
-      validation: '입력 중복, 긴 설명의 화면 경계, 프레임 지연 시 충돌을 검증 항목으로 정리했습니다.',
+      validation: "Windows 실행 파일과 Windows·Web·소스 ZIP의 SHA-256이 보관 기록과 일치합니다.",
       links: []
     }
   ]
@@ -202,6 +275,7 @@ window.PERSONAL_WORK = {
 window.PERSONAL_WORK.items = [
   window.PERSONAL_WORK.items.find(item => item.id === 'java-edu'),
   window.PERSONAL_WORK.items.find(item => item.id === 'javascript-edu'),
+  window.PERSONAL_WORK.items.find(item => item.id === 'portfolio-exhibition'),
   window.PERSONAL_WORK.items.find(item => item.id === 'custom-skills'),
   window.PERSONAL_WORK.items.find(item => item.id === 'gangho-munparok'),
   window.PERSONAL_WORK.items.find(item => item.id === 'simple-game1')

@@ -61,14 +61,95 @@ function screenExamples(project) {
   return `<details class="screen-details" open><summary>화면과 기능의 변화</summary><p class="screen-disclaimer">${escapeHtml(project.screens.caption)}</p><div class="screen-grid">${project.screens.items.map(screen => `<figure><a class="screen-link" href="${escapeHtml(screen.src)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(screen.title)} 크게 보기 (새 탭)"><img src="${escapeHtml(screen.src)}" alt="${escapeHtml(screen.title)}. 가상 데이터로 재구성한 설명용 화면." loading="lazy"></a><figcaption><b>${escapeHtml(screen.title)}</b>${escapeHtml(screen.description)}</figcaption></figure>`).join('')}</div>${comparison(['구분', '개선 전', '개선 후'], project.changes)}</details>`;
 }
 
-document.querySelector('#project-content').innerHTML = asArray(profile.projects).map((project, index) => `
-  <article class="project-card" id="case-${index + 1}"><div class="project-index">0${index + 1}</div><div class="project-body">
-    <div class="project-head"><div><p>${escapeHtml(project.period)}</p><h3>${escapeHtml(project.title)}</h3></div><div class="result">${escapeHtml(project.result)}</div></div>
-    <p class="project-description">${escapeHtml(project.description)}</p><p class="project-role">담당 범위 · ${escapeHtml(project.role)}</p>${tags(project.tags)}
-    <ol class="project-flow" aria-label="구현 흐름">${asArray(project.flow).map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol>
-    <details class="case-details"><summary>문제 해결 과정과 설계 판단</summary><div class="case-grid"><div><h4>문제</h4><p>${escapeHtml(project.problem)}</p></div><div><h4>접근과 실행</h4><p>${escapeHtml(project.action)}</p></div><div><h4>결과</h4><p>${escapeHtml(project.outcome)}</p></div></div><h4 class="case-section-title">구현에서 중요했던 판단</h4>${comparison(['쟁점', '구현한 선택', '의미와 고려사항'], project.decisions)}</details>
-    ${codeExample(project.code, project.related?.batch ? null : project.related)}${project.related?.batch && typeof window.renderBatchWork === 'function' ? window.renderBatchWork(project.related) : ''}${screenExamples(project)}
-  </div></article>`).join('');
+// The document view presents individual issues without changing exhibition data.
+(() => {
+  const container = document.getElementById('project-content');
+  if (!container) return;
+  const [statistics, correction, lookup] = asArray(profile.projects);
+  const firstSentence = value => String(value || '').split(/(?<=[.!?])\s+/)[0];
+  const remainingSentences = value => String(value || '').split(/(?<=[.!?])\s+/).slice(1).join(' ');
+  const batch = statistics?.related?.batch;
+  const issues = [
+    statistics && { ...statistics, id: 'case-1', related: null },
+    batch && {
+      id: 'case-regional', title: '지역별 회원수 수집 자동화',
+      period: '㈜이씨오 · 책이음 연계 서비스 · 2025.11',
+      result: '200개 이상 지역 수집 자동화',
+      role: batch.role,
+      tags: ['스케줄러', '그룹 내 병렬 처리', '응답 검증'],
+      problem: batch.baselineBody, action: `${statistics.related.body} ${batch.appliedBody}`,
+      outcome: batch.outcome, batchRelated: statistics.related,
+    },
+    lookup && {
+      ...lookup, id: 'case-3', title: '이기종 도서관 이용자 조회',
+      description: firstSentence(lookup.description), role: String(lookup.role || '').split(' · ')[0],
+      tags: ['Spring MVC', 'MyBatis', '응답 변환'],
+      problem: firstSentence(lookup.problem), action: firstSentence(lookup.action),
+      outcome: firstSentence(lookup.outcome), decisions: asArray(lookup.decisions).slice(0, 3),
+      screens: null, changes: null, related: null,
+    },
+    correction && { ...correction, id: 'case-2' },
+    lookup && {
+      id: 'case-support', title: '주말민원 통합 조회 도구 개선', period: lookup.period,
+      result: '지역별 상태·연체자료 통합 조회',
+      description: remainingSentences(lookup.description), role: String(lookup.role || '').split(' · ').slice(1).join(' · '),
+      tags: ['Spring MVC', 'JSP · AJAX', '운영 도구'],
+      problem: remainingSentences(lookup.problem), action: remainingSentences(lookup.action),
+      outcome: remainingSentences(lookup.outcome), decisions: asArray(lookup.decisions).slice(3),
+      screens: lookup.screens, changes: lookup.changes,
+    },
+  ].filter(Boolean);
+
+  container.innerHTML = issues.length ? issues.map(issue => `
+    <article class="issue-card" id="${issue.id}" aria-labelledby="${issue.id}-title">
+      <div class="issue-summary">
+        <p class="issue-period">${escapeHtml(issue.period)}</p>
+        <h3 id="${issue.id}-title">${escapeHtml(issue.title)}</h3>
+        <p class="issue-result">${escapeHtml(issue.result)}</p>
+        <p class="issue-problem">${escapeHtml(firstSentence(issue.problem))}</p>
+        ${tags(asArray(issue.tags).slice(0, 3))}
+      </div>
+      <details class="issue-details" id="issue-details-${issue.id}">
+        <summary><span class="issue-open-label">자세히 보기</span><span class="issue-close-label">접기</span><span class="sr-only"> · ${escapeHtml(issue.title)}</span><span class="issue-toggle-icon" aria-hidden="true">+</span></summary>
+        <div class="issue-detail-body">
+          ${issue.description ? `<p class="project-description">${escapeHtml(issue.description)}</p>` : ''}
+          <p class="project-role">담당 범위 · ${escapeHtml(issue.role)}</p>
+          <div class="issue-story"><section><h4>문제</h4><p>${escapeHtml(issue.problem)}</p></section><section><h4>해결</h4><p>${escapeHtml(issue.action)}</p></section><section class="issue-outcome"><h4>결과</h4><p>${escapeHtml(issue.outcome)}</p></section></div>
+          ${asArray(issue.flow).length ? `<ol class="project-flow" aria-label="구현 흐름">${issue.flow.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol>` : ''}
+          ${asArray(issue.decisions).length ? `<h4 class="case-section-title">구현에서 중요했던 판단</h4>${comparison(['쟁점', '구현한 선택', '의미와 고려사항'], issue.decisions)}` : ''}
+          ${codeExample(issue.code, null)}
+          ${issue.related ? `<section class="related-work"><h4>${escapeHtml(issue.related.title)}</h4><p>${escapeHtml(issue.related.body)}</p></section>` : ''}
+          ${issue.batchRelated ? (typeof window.renderBatchWork === 'function' ? window.renderBatchWork(issue.batchRelated, { showOverview: false }) : `<p class="issue-recovery">수집 구조를 표시하지 못했습니다. 페이지를 새로고침하거나 <a href="pdf/portfolio.pdf">포트폴리오 PDF</a>에서 확인해 주세요.</p>`) : ''}
+          ${screenExamples(issue)}
+        </div>
+      </details>
+    </article>`).join('') : '<p class="issue-recovery">사례를 표시하지 못했습니다. 페이지를 새로고침하거나 <a href="pdf/portfolio.pdf">포트폴리오 PDF</a>에서 확인해 주세요.</p>';
+
+  const updateCard = detail => detail.closest('.issue-card')?.classList.toggle('is-open', detail.open);
+  container.querySelectorAll('details').forEach(detail => {
+    if (!detail.id.startsWith('issue-details-')) return;
+    detail.addEventListener('toggle', () => updateCard(detail));
+  });
+  const openLinkedIssue = () => {
+    let id;
+    try { id = decodeURIComponent(location.hash.slice(1)); } catch { return; }
+    const target = document.getElementById(id);
+    if (!target || !container.contains(target)) return;
+    const card = target.closest('.issue-card');
+    if (!card) return;
+    const detail = document.getElementById(`issue-details-${card.id}`);
+    if (!detail) return;
+    detail.open = true;
+    updateCard(detail);
+    // A legacy link may point inside another disclosure, such as batch details.
+    for (let node = target; node && node !== card; node = node.parentElement) {
+      if (node.tagName === 'DETAILS') node.open = true;
+    }
+    requestAnimationFrame(() => target.scrollIntoView({ block: 'start', behavior: 'instant' }));
+  };
+  window.addEventListener('hashchange', openLinkedIssue);
+  openLinkedIssue();
+})();
 
 document.querySelector('#career-content').innerHTML = asArray(profile.career).map(job => `<article class="career-item"><div><h3>${escapeHtml(job.company)}</h3><p class="period">${escapeHtml(job.role)}<br>${escapeHtml(job.period)}</p></div><div>${asArray(job.groups).map(([title, items]) => `<h4>${escapeHtml(title)}</h4>${bullets(items)}`).join('')}</div></article>`).join('');
 
@@ -102,6 +183,35 @@ document.querySelector('#career-content').innerHTML = asArray(profile.career).ma
     const content = text(value);
     if (!content) return;
     parent.append(element('h4', '', title), element('p', '', content));
+  };
+  const appendPreview = (card, preview, title) => {
+    if (!preview) return;
+    const src = text(preview.src);
+    const alt = text(preview.alt);
+    const caption = text(preview.caption);
+    if (!/^assets\/[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:png|webp)$/i.test(src) || !alt || !caption) return;
+    if (![preview.width, preview.height].every(value => Number.isInteger(value) && value > 0)) return;
+
+    const figure = element('figure', 'personal-work-preview');
+    const image = element('img', '');
+    image.src = src;
+    image.alt = alt;
+    image.width = preview.width;
+    image.height = preview.height;
+    image.loading = 'lazy';
+    image.decoding = 'async';
+    figure.append(image);
+
+    const description = element('figcaption', '', caption);
+    const source = safeHref(preview.source);
+    if (source) {
+      const link = element('a', '', 'README에서 원본 보기');
+      link.href = source;
+      link.setAttribute('aria-label', `${title} README에서 원본 보기`);
+      description.append(link);
+    }
+    figure.append(description);
+    card.append(figure);
   };
 
   try {
@@ -146,6 +256,7 @@ document.querySelector('#career-content').innerHTML = asArray(profile.career).ma
         role.append(element('strong', '', '담당 역할'), document.createTextNode(text(item.role)));
         card.append(role);
       }
+      appendPreview(card, item.preview, title);
 
       const details = element('details', 'personal-work-details');
       const labels = item.labels && typeof item.labels === 'object' ? item.labels : {};

@@ -21,6 +21,10 @@ body > .skip:focus { transform: translateY(0); }
 .personal-work-tags li { min-width: 0; max-width: 100%; padding: .25em .75em; border: 1px solid var(--line); border-radius: 4px; color: #586781; font-size: .8125em; }
 .personal-work-role { margin: 1.25em 0 0; color: #465570; font-size: .875em; }
 .personal-work-role strong { margin-right: .6em; color: var(--navy); font-weight: 600; }
+.personal-work-preview { max-width: 46rem; margin: 1.5em 0 0; }
+.personal-work-preview img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; }
+.personal-work-preview figcaption { display: flex; flex-wrap: wrap; gap: .25em 1em; margin-top: .6em; color: #465570; font-size: .875em; }
+.personal-work-preview figcaption a { color: var(--blue); text-decoration: underline; text-underline-offset: .2em; }
 .personal-work-details { margin-top: 1.5em; padding-top: .5em; }
 .personal-work-details > summary { min-height: 2.75em; padding-block: .55em; font-size: .9375em; line-height: 1.8; color: var(--blue); }
 .personal-work-details > summary:focus-visible { outline: 3px solid #5189ff; outline-offset: 4px; border-radius: 2px; }
